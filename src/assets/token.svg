@@ -1,0 +1,59 @@
+<svg viewBox="15 5 70 90" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Soft ground shadow under the base -->
+    <radialGradient id="pawnShadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 3D spherical highlights for glass gloss volume -->
+    <radialGradient id="sphereShine" cx="35%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="35%" stop-color="#ffffff" stop-opacity="0.25"/>
+      <stop offset="70%" stop-color="#000000" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.45"/>
+    </radialGradient>
+
+    <!-- Linear 3D shadow gradient overlay for body -->
+    <linearGradient id="bodyShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.4"/>
+      <stop offset="20%" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="65%" stop-color="#000000" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
+    </linearGradient>
+
+    <!-- Frosted glass shell overlay gradient -->
+    <radialGradient id="glassShell" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#475569" stop-opacity="0.3"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Ground shadow -->
+  <ellipse cx="50" cy="84.5" rx="20.5" ry="5.8" fill="url(#pawnShadow)"/>
+
+  <!-- ============ BASE DISK ============ -->
+  <ellipse cx="50" cy="80.5" rx="19.5" ry="6.4" fill="var(--fill-colour)" stroke="rgba(255,255,255,0.4)" stroke-width="0.8" />
+  <ellipse cx="50" cy="80.5" rx="19.5" ry="6.4" fill="url(#sphereShine)" opacity="0.8" />
+  <ellipse cx="50" cy="80.5" rx="19.5" ry="6.4" fill="url(#glassShell)" opacity="0.65" />
+
+  <!-- ============ BODY CONE ============ -->
+  <path d="M 31.5 80.5 C 33.5 61, 41.5 56.5, 43.5 48.5 L 56.5 48.5 C 58.5 56.5, 66.5 61, 68.5 80.5 Z" fill="var(--fill-colour)" stroke="rgba(255,255,255,0.35)" stroke-width="0.8" />
+  <path d="M 31.5 80.5 C 33.5 61, 41.5 56.5, 43.5 48.5 L 56.5 48.5 C 58.5 56.5, 66.5 61, 68.5 80.5 Z" fill="url(#bodyShade)" opacity="0.9" />
+  <path d="M 31.5 80.5 C 33.5 61, 41.5 56.5, 43.5 48.5 L 56.5 48.5 C 58.5 56.5, 66.5 61, 68.5 80.5 Z" fill="url(#glassShell)" opacity="0.5" />
+
+  <!-- ============ COLLAR RING ============ -->
+  <ellipse cx="50" cy="48.5" rx="8.8" ry="3.2" fill="var(--fill-colour)" stroke="rgba(255,255,255,0.4)" stroke-width="0.8" />
+  <ellipse cx="50" cy="48.5" rx="8.8" ry="3.2" fill="url(#sphereShine)" opacity="0.8" />
+  <ellipse cx="50" cy="48.5" rx="8.8" ry="3.2" fill="url(#glassShell)" opacity="0.6" />
+
+  <!-- ============ HEAD SPHERE ============ -->
+  <circle cx="50" cy="33" r="11.5" fill="var(--fill-colour)" stroke="rgba(255,255,255,0.35)" stroke-width="0.8" />
+  <circle cx="50" cy="33" r="11.5" fill="url(#sphereShine)" opacity="0.9" />
+  <circle cx="50" cy="33" r="11.5" fill="url(#glassShell)" opacity="0.6" />
+
+  <!-- Glass Specular Ring/Reflection on head -->
+  <ellipse cx="46.5" cy="27" rx="3.5" ry="1.8" fill="#ffffff" opacity="0.7" transform="rotate(-15 46.5 27)"/>
+  <ellipse cx="53" cy="38" rx="2" ry="1" fill="#ffffff" opacity="0.2" />
+</svg>

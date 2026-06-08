@@ -1,0 +1,32 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100vh;
+  max-width: 100vw;
+  background-color: #1c0e05;
+  background-image: url('./assets/wood_table_bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  font-family: 'Inter Variable', system-ui, sans-serif;
+  --color-primary: #1e88e5;
+  --color-primary-hover: #1565c0;
+}
+
+#root {
+  width: 100%;
+  max-width: 600px;
+  height: 100vh;
+  margin: 0 auto;
+  position: relative;
+  box-shadow: 0 0 70px rgba(0, 0, 0, 0.85);
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: transparent;
+  container-type: inline-size;
+}

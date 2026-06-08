@@ -1,0 +1,194 @@
+<svg viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="ludoShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0.02" dy="0.03" stdDeviation="0.025" flood-color="#000000" flood-opacity="0.2"/>
+    </filter>
+    <linearGradient id="ludoRedGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E83E31"/>
+      <stop offset="100%" stop-color="#C62828"/>
+    </linearGradient>
+    <linearGradient id="ludoGreenGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#23A84E"/>
+      <stop offset="100%" stop-color="#1B5E20"/>
+    </linearGradient>
+    <linearGradient id="ludoBlueGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#249AD9"/>
+      <stop offset="100%" stop-color="#0D47A1"/>
+    </linearGradient>
+    <linearGradient id="ludoYellowGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F8CD1F"/>
+      <stop offset="100%" stop-color="#D6A50E"/>
+    </linearGradient>
+    <radialGradient id="redSocket" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#B71C1C"/>
+      <stop offset="70%" stop-color="#E53935"/>
+      <stop offset="100%" stop-color="#FF5252"/>
+    </radialGradient>
+    <radialGradient id="greenSocket" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1B5E20"/>
+      <stop offset="70%" stop-color="#43A047"/>
+      <stop offset="100%" stop-color="#66BB6A"/>
+    </radialGradient>
+    <radialGradient id="blueSocket" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0D47A1"/>
+      <stop offset="70%" stop-color="#1E88E5"/>
+      <stop offset="100%" stop-color="#64B5F6"/>
+    </radialGradient>
+    <radialGradient id="yellowSocket" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#E0A800"/>
+      <stop offset="70%" stop-color="#FDD835"/>
+      <stop offset="100%" stop-color="#FFEE58"/>
+    </radialGradient>
+    <radialGradient id="ludoCenterGreenGradient" cx="7.5" cy="6.0" r="2.1" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#23A84E"/>
+      <stop offset="100%" stop-color="#1B5E20"/>
+    </radialGradient>
+    <radialGradient id="ludoCenterYellowGradient" cx="9.0" cy="7.5" r="2.1" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F8CD1F"/>
+      <stop offset="100%" stop-color="#D6A50E"/>
+    </radialGradient>
+    <radialGradient id="ludoCenterBlueGradient" cx="7.5" cy="9.0" r="2.1" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#249AD9"/>
+      <stop offset="100%" stop-color="#0D47A1"/>
+    </radialGradient>
+    <radialGradient id="ludoCenterRedGradient" cx="6.0" cy="7.5" r="2.1" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E83E31"/>
+      <stop offset="100%" stop-color="#C62828"/>
+    </radialGradient>
+  </defs>
+  <rect x="0" y="0" width="15" height="15" fill="#FAF9F6" />
+  <rect x="0" y="6" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="0" y="7" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="0" y="8" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="1" y="6" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="1" y="7" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="1" y="8" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="2" y="6" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="2" y="7" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="2" y="8" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="3" y="6" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="3" y="7" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="3" y="8" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="4" y="6" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="4" y="7" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="4" y="8" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="5" y="6" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="5" y="7" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="5" y="8" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="6" y="0" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="6" y="1" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="6" y="2" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="6" y="3" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="6" y="4" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="6" y="5" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="6" y="9" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="6" y="10" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="6" y="11" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="6" y="12" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="6" y="13" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="6" y="14" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="0" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="1" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="2" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="3" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="4" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="5" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="9" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="10" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="11" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="12" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="13" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="14" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="8" y="0" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="8" y="1" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="8" y="2" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="8" y="3" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="8" y="4" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="8" y="5" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="8" y="9" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="8" y="10" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="8" y="11" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="8" y="12" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="8" y="13" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="8" y="14" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="9" y="6" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="9" y="7" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="9" y="8" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="10" y="6" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="10" y="7" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="10" y="8" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="11" y="6" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="11" y="7" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="11" y="8" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="12" y="6" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="12" y="7" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="12" y="8" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="13" y="6" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="13" y="7" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="13" y="8" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="14" y="6" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="14" y="7" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="14" y="8" width="1" height="1" fill="#FAF9F6" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="1" y="7" width="1" height="1" fill="url(#ludoRedGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="2" y="7" width="1" height="1" fill="url(#ludoRedGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="3" y="7" width="1" height="1" fill="url(#ludoRedGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="4" y="7" width="1" height="1" fill="url(#ludoRedGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="5" y="7" width="1" height="1" fill="url(#ludoRedGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="1" width="1" height="1" fill="url(#ludoGreenGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="2" width="1" height="1" fill="url(#ludoGreenGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="3" width="1" height="1" fill="url(#ludoGreenGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="4" width="1" height="1" fill="url(#ludoGreenGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="5" width="1" height="1" fill="url(#ludoGreenGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="9" y="7" width="1" height="1" fill="url(#ludoYellowGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="10" y="7" width="1" height="1" fill="url(#ludoYellowGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="11" y="7" width="1" height="1" fill="url(#ludoYellowGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="12" y="7" width="1" height="1" fill="url(#ludoYellowGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="13" y="7" width="1" height="1" fill="url(#ludoYellowGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="9" width="1" height="1" fill="url(#ludoBlueGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="10" width="1" height="1" fill="url(#ludoBlueGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="11" width="1" height="1" fill="url(#ludoBlueGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="12" width="1" height="1" fill="url(#ludoBlueGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="7" y="13" width="1" height="1" fill="url(#ludoBlueGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="1" y="6" width="1" height="1" fill="url(#ludoRedGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="8" y="1" width="1" height="1" fill="url(#ludoGreenGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="13" y="8" width="1" height="1" fill="url(#ludoYellowGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="6" y="13" width="1" height="1" fill="url(#ludoBlueGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <path d="M 0,-0.32 L 0.09,-0.1 L 0.32,-0.1 L 0.14,0.07 L 0.22,0.32 L 0,0.16 L -0.22,0.32 L -0.14,0.07 L -0.32,-0.1 L -0.09,-0.1 Z" fill="none" stroke="#555555" stroke-width="0.04" stroke-linejoin="round" transform="translate(2.5, 8.5) scale(1.15)" />
+  <path d="M 0,-0.32 L 0.09,-0.1 L 0.32,-0.1 L 0.14,0.07 L 0.22,0.32 L 0,0.16 L -0.22,0.32 L -0.14,0.07 L -0.32,-0.1 L -0.09,-0.1 Z" fill="none" stroke="#555555" stroke-width="0.04" stroke-linejoin="round" transform="translate(6.5, 2.5) scale(1.15)" />
+  <path d="M 0,-0.32 L 0.09,-0.1 L 0.32,-0.1 L 0.14,0.07 L 0.22,0.32 L 0,0.16 L -0.22,0.32 L -0.14,0.07 L -0.32,-0.1 L -0.09,-0.1 Z" fill="none" stroke="#555555" stroke-width="0.04" stroke-linejoin="round" transform="translate(12.5, 6.5) scale(1.15)" />
+  <path d="M 0,-0.32 L 0.09,-0.1 L 0.32,-0.1 L 0.14,0.07 L 0.22,0.32 L 0,0.16 L -0.22,0.32 L -0.14,0.07 L -0.32,-0.1 L -0.09,-0.1 Z" fill="none" stroke="#555555" stroke-width="0.04" stroke-linejoin="round" transform="translate(8.5, 12.5) scale(1.15)" />
+  <!-- Start arrows -->
+  <path d="M -0.25,-0.1 L 0.05,-0.1 L 0.05,-0.22 L 0.3,0 L 0.05,0.22 L 0.05,0.1 L -0.25,0.1 Z" fill="#D9362B" transform="translate(0.5, 7.5) scale(0.9)" />
+  <path d="M -0.1,-0.25 L -0.1,0.05 L -0.22,0.05 L 0,0.3 L 0.22,0.05 L 0.1,0.05 L 0.1,-0.25 Z" fill="#1E9E49" transform="translate(7.5, 0.5) scale(0.9)" />
+  <path d="M 0.25,-0.1 L -0.05,-0.1 L -0.05,-0.22 L -0.3,0 L -0.05,0.22 L -0.05,0.1 L 0.25,0.1 Z" fill="#F4C41B" transform="translate(14.5, 7.5) scale(0.9)" />
+  <path d="M -0.1,0.25 L -0.1,-0.05 L -0.22,-0.05 L 0,-0.3 L 0.22,-0.05 L 0.1,-0.05 L 0.1,0.25 Z" fill="#1D8CCF" transform="translate(7.5, 14.5) scale(0.9)" />
+  <polygon points="6,6 9,6 7.5,7.5" fill="url(#ludoCenterGreenGradient)" stroke="#B9AA96" stroke-width="0.04" />
+  <polygon points="9,6 9,9 7.5,7.5" fill="url(#ludoCenterYellowGradient)" stroke="#B9AA96" stroke-width="0.04" />
+  <polygon points="6,9 9,9 7.5,7.5" fill="url(#ludoCenterBlueGradient)" stroke="#B9AA96" stroke-width="0.04" />
+  <polygon points="6,6 6,9 7.5,7.5" fill="url(#ludoCenterRedGradient)" stroke="#B9AA96" stroke-width="0.04" />
+  <rect x="0" y="0" width="6" height="6" fill="url(#ludoRedGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="1.0" y="1.0" width="4.0" height="4.0" rx="0.25" ry="0.25" fill="#FFFFFF" stroke="#D2D2D2" stroke-width="0.04" filter="url(#ludoShadow)" />
+  <circle cx="2.0" cy="2.0" r="0.45" fill="url(#redSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <circle cx="4.0" cy="2.0" r="0.45" fill="url(#redSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <circle cx="2.0" cy="4.0" r="0.45" fill="url(#redSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <circle cx="4.0" cy="4.0" r="0.45" fill="url(#redSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <rect x="9" y="0" width="6" height="6" fill="url(#ludoGreenGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="10.0" y="1.0" width="4.0" height="4.0" rx="0.25" ry="0.25" fill="#FFFFFF" stroke="#D2D2D2" stroke-width="0.04" filter="url(#ludoShadow)" />
+  <circle cx="11.0" cy="2.0" r="0.45" fill="url(#greenSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <circle cx="13.0" cy="2.0" r="0.45" fill="url(#greenSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <circle cx="11.0" cy="4.0" r="0.45" fill="url(#greenSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <circle cx="13.0" cy="4.0" r="0.45" fill="url(#greenSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <rect x="0" y="9" width="6" height="6" fill="url(#ludoBlueGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="1.0" y="10.0" width="4.0" height="4.0" rx="0.25" ry="0.25" fill="#FFFFFF" stroke="#D2D2D2" stroke-width="0.04" filter="url(#ludoShadow)" />
+  <circle cx="2.0" cy="11.0" r="0.45" fill="url(#blueSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <circle cx="4.0" cy="11.0" r="0.45" fill="url(#blueSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <circle cx="2.0" cy="13.0" r="0.45" fill="url(#blueSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <circle cx="4.0" cy="13.0" r="0.45" fill="url(#blueSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <rect x="9" y="9" width="6" height="6" fill="url(#ludoYellowGradient)" stroke="#CCCCCC" stroke-width="0.04" />
+  <rect x="10.0" y="10.0" width="4.0" height="4.0" rx="0.25" ry="0.25" fill="#FFFFFF" stroke="#D2D2D2" stroke-width="0.04" filter="url(#ludoShadow)" />
+  <circle cx="11.0" cy="11.0" r="0.45" fill="url(#yellowSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <circle cx="13.0" cy="11.0" r="0.45" fill="url(#yellowSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <circle cx="11.0" cy="13.0" r="0.45" fill="url(#yellowSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <circle cx="13.0" cy="13.0" r="0.45" fill="url(#yellowSocket)" stroke="#CCCCCC" stroke-width="0.025" />
+  <rect x="0" y="0" width="15" height="15" fill="none" stroke="#CCCCCC" stroke-width="0.08" />
+</svg>

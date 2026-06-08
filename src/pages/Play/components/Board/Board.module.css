@@ -1,0 +1,84 @@
+.board {
+  position: relative;
+  --board-side-length: min(98cqw, 82vh);
+  --player-name-spacing: calc(var(--board-tile-size) * 0.25);
+  height: var(--board-side-length);
+  width: var(--board-side-length);
+  flex-shrink: 0;
+}
+
+.boardImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: var(--board-side-length);
+  width: var(--board-side-length);
+  background-image: url('../../../../assets/board_wood.jpg');
+  background-size: cover;
+  background-position: center;
+  border-radius: 12px;
+  box-shadow:
+    0 16px 45px rgba(0, 0, 0, 0.75),
+    inset 0 2px 4px rgba(255, 255, 255, 0.15);
+  z-index: 0;
+}
+
+.paddockGlow {
+  position: absolute;
+  width: 40%;
+  height: 40%;
+  border-radius: 28px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease, box-shadow 0.4s ease;
+  z-index: 1;
+  /* Above board image, below tokens */
+  mix-blend-mode: color-dodge;
+}
+
+.paddockGlow.active {
+  opacity: 1;
+  animation: pulseGlow 1.2s infinite alternate ease-in-out;
+}
+
+.paddockGlow.red {
+  top: 0;
+  left: 0;
+  box-shadow: inset 0 0 45px rgba(239, 68, 68, 0.6), 0 0 30px rgba(239, 68, 68, 0.45);
+  border: 2.5px solid rgba(239, 68, 68, 0.75);
+}
+
+.paddockGlow.green {
+  top: 0;
+  right: 0;
+  box-shadow: inset 0 0 45px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.45);
+  border: 2.5px solid rgba(34, 197, 94, 0.75);
+}
+
+.paddockGlow.yellow {
+  bottom: 0;
+  right: 0;
+  box-shadow: inset 0 0 45px rgba(234, 179, 8, 0.6), 0 0 30px rgba(234, 179, 8, 0.45);
+  border: 2.5px solid rgba(234, 179, 8, 0.75);
+}
+
+.paddockGlow.blue {
+  bottom: 0;
+  left: 0;
+  box-shadow: inset 0 0 45px rgba(59, 130, 246, 0.6), 0 0 30px rgba(59, 130, 246, 0.45);
+  border: 2.5px solid rgba(59, 130, 246, 0.75);
+}
+
+@keyframes pulseGlow {
+  0% {
+    opacity: 0.5;
+    filter: brightness(1);
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 1;
+    filter: brightness(1.4);
+    transform: scale(1.02);
+  }
+}
