@@ -1,52 +1,117 @@
-.player-input {
-  display: grid;
-  grid-template-columns: 0.5fr 2fr 0.5fr;
-  justify-content: space-evenly;
-  align-items: center;
-  width: 100%;
-  padding-inline: 0;
-}
-.player-input > * {
-  justify-self: center;
-  align-self: center;
-}
-.player-input-colour-dot {
-  width: calc(var(--dialog-width) * 0.065);
-  border-radius: 1000px;
-  height: auto;
-  aspect-ratio: 1 / 1;
-  border: 1px solid black;
-}
-.bot-status-btn {
-  background-color: var(--color-primary);
-  width: calc(var(--dialog-width) / 11.5);
+.playerInputRow {
   display: flex;
-  justify-content: center;
   align-items: center;
-  border: none;
-  border-radius: calc(var(--dialog-width) / 70);
-  height: auto;
-  aspect-ratio: 1 / 1;
-  cursor: pointer;
-  transition: background-color 200ms;
-}
-.bot-status-btn:hover,
-.bot-status-btn:active,
-.bot-status-btn:focus-visible {
-  background-color: var(--color-primary-hover);
-}
-.player-name-input {
-  padding: calc(var(--dialog-width) / 49) calc(var(--dialog-width) / 35);
-  font-size: calc(var(--dialog-width) / 28);
-  border: 1px solid #ccc;
-  border-radius: calc(var(--dialog-width) / 62);
-  outline: none;
-  transition: border-color 200ms ease-in-out;
+  justify-content: space-between;
+  gap: 12px;
   width: 100%;
 }
 
-.player-name-input:hover,
-.player-name-input:focus-visible {
-  border-color: #5b6ef5;
-  box-shadow: 0 0 0 2px rgba(91, 110, 245, 0.2);
+.avatarContainer {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 50px;
+  height: 50px;
+}
+
+.avatarCircle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.6) 100%);
+  border: 2px solid var(--player-color);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.avatarToken {
+  width: 32px;
+  height: 40px;
+  margin-top: 4px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.numberBadge {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #1a237e;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  z-index: 2;
+}
+
+.inputPill {
+  flex: 1;
+  background: #f5f5f5;
+  border-radius: 20px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  padding-inline: 12px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+.pencilIcon {
+  color: #1565c0;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.playerNameInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1c2d42;
+  width: 100%;
+  height: 100%;
+}
+
+.playerNameInput::placeholder {
+  color: #78909c;
+}
+
+.toggleBtn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3);
+  transition: all 0.2s ease;
+  color: #ffffff;
+}
+
+.toggleBtn:hover {
+  transform: scale(1.08);
+  border-color: rgba(255,255,255,0.6);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.4);
+}
+
+.toggleBtn:active {
+  transform: scale(0.95);
+}
+
+.toggleIcon {
+  width: 22px;
+  height: 22px;
 }

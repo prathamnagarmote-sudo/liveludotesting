@@ -6,6 +6,8 @@
   background: none;
   border: none;
   outline: none;
+  padding: 0;
+  margin: 0;
   width: calc(var(--token-width));
   transition: transform var(--token-transition-time) var(--token-transition-timing-fn);
   transform-style: preserve-3d;

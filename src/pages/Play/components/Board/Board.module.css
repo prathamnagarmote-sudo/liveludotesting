@@ -1,10 +1,11 @@
 .board {
   position: relative;
-  --board-side-length: min(98cqw, 82vh);
+  --board-side-length: min(98cqw, 87vh);
   --player-name-spacing: calc(var(--board-tile-size) * 0.25);
   height: var(--board-side-length);
   width: var(--board-side-length);
   flex-shrink: 0;
+  border-radius: 12px;
 }
 
 .boardImage {
@@ -47,6 +48,7 @@
   left: 0;
   box-shadow: inset 0 0 60px rgba(239, 68, 68, 0.8), inset 0 0 20px rgba(239, 68, 68, 0.5);
   border: 3.5px solid rgba(239, 68, 68, 0.85);
+  border-top-left-radius: 12px;
 }
 
 .paddockGlow.green {
@@ -54,6 +56,7 @@
   right: 0;
   box-shadow: inset 0 0 60px rgba(34, 197, 94, 0.8), inset 0 0 20px rgba(34, 197, 94, 0.5);
   border: 3.5px solid rgba(34, 197, 94, 0.85);
+  border-top-right-radius: 12px;
 }
 
 .paddockGlow.yellow {
@@ -61,6 +64,7 @@
   right: 0;
   box-shadow: inset 0 0 60px rgba(234, 179, 8, 0.8), inset 0 0 20px rgba(234, 179, 8, 0.5);
   border: 3.5px solid rgba(234, 179, 8, 0.85);
+  border-bottom-right-radius: 12px;
 }
 
 .paddockGlow.blue {
@@ -68,6 +72,7 @@
   left: 0;
   box-shadow: inset 0 0 60px rgba(59, 130, 246, 0.8), inset 0 0 20px rgba(59, 130, 246, 0.5);
   border: 3.5px solid rgba(59, 130, 246, 0.85);
+  border-bottom-left-radius: 12px;
 }
 
 @keyframes pulseGlow {

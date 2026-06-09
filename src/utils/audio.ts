@@ -159,7 +159,7 @@ export function playDiceRollSound() {
     const now = ctx.currentTime;
 
     // 1. Soft rolling friction (frictional wood slide sound as the dice rolls on the table)
-    const slideSize = ctx.sampleRate * 0.25; // 250ms slide duration
+    const slideSize = ctx.sampleRate * 0.28; // 280ms slide duration
     const slideBuf = ctx.createBuffer(1, slideSize, ctx.sampleRate);
     const slideData = slideBuf.getChannelData(0);
     for (let i = 0; i < slideSize; i++) {
@@ -170,13 +170,13 @@ export function playDiceRollSound() {
 
     const slideFilter = ctx.createBiquadFilter();
     slideFilter.type = 'bandpass';
-    slideFilter.frequency.setValueAtTime(1400, now + 0.18);
-    slideFilter.frequency.linearRampToValueAtTime(700, now + 0.43);
+    slideFilter.frequency.setValueAtTime(1300, now + 0.18);
+    slideFilter.frequency.linearRampToValueAtTime(600, now + 0.46);
 
     const slideGain = ctx.createGain();
     slideGain.gain.setValueAtTime(0.0, now + 0.18);
-    slideGain.gain.linearRampToValueAtTime(0.015, now + 0.23);
-    slideGain.gain.exponentialRampToValueAtTime(0.001, now + 0.43);
+    slideGain.gain.linearRampToValueAtTime(0.012, now + 0.23);
+    slideGain.gain.exponentialRampToValueAtTime(0.001, now + 0.46);
 
     slideNode.connect(slideFilter);
     slideFilter.connect(slideGain);
@@ -185,18 +185,22 @@ export function playDiceRollSound() {
     // Start friction slide as the dice lands on the table
     slideNode.start(now + 0.18);
 
-    // 2. Individual clatters (shake and bounces)
+    // 2. Individual clatters (shake inside cup, then table bounces)
     const bounces = [
-      // Muffled hand/cup shake rattles
-      { delay: 0.00, freq: 450, vol: 0.06, len: 0.015, hpf: 2000 },
-      { delay: 0.06, freq: 480, vol: 0.05, len: 0.015, hpf: 2000 },
-      { delay: 0.12, freq: 430, vol: 0.06, len: 0.015, hpf: 2000 },
-      // Table board impacts (brighter, higher frequency, crisper click HPF)
-      { delay: 0.22, freq: 850, vol: 0.10, len: 0.020, hpf: 3500 },
-      { delay: 0.28, freq: 920, vol: 0.07, len: 0.018, hpf: 3500 },
-      { delay: 0.34, freq: 790, vol: 0.06, len: 0.016, hpf: 3500 },
-      { delay: 0.39, freq: 880, vol: 0.04, len: 0.014, hpf: 3500 },
-      { delay: 0.43, freq: 680, vol: 0.08, len: 0.025, hpf: 3000 }, // Final settle clack
+      // Muffled cup shake rattles (low frequency body, quiet click)
+      { delay: 0.00, freq: 360, vol: 0.03, len: 0.012, hpf: 1500 },
+      { delay: 0.05, freq: 400, vol: 0.04, len: 0.012, hpf: 1500 },
+      { delay: 0.10, freq: 380, vol: 0.03, len: 0.012, hpf: 1500 },
+      { delay: 0.14, freq: 430, vol: 0.04, len: 0.012, hpf: 1500 },
+      // Table board impacts (sharp, bright high-pitch clatter)
+      { delay: 0.23, freq: 1050, vol: 0.14, len: 0.022, hpf: 4500 }, // First hard drop
+      { delay: 0.27, freq: 980,  vol: 0.09, len: 0.018, hpf: 4200 },
+      { delay: 0.31, freq: 920,  vol: 0.07, len: 0.016, hpf: 4000 },
+      { delay: 0.35, freq: 850,  vol: 0.05, len: 0.014, hpf: 3800 },
+      { delay: 0.38, freq: 790,  vol: 0.04, len: 0.012, hpf: 3500 },
+      // Second die settling slightly after (creates natural two-dice scatter sound)
+      { delay: 0.43, freq: 750,  vol: 0.08, len: 0.024, hpf: 3300 }, // Final settle clack
+      { delay: 0.46, freq: 710,  vol: 0.04, len: 0.016, hpf: 3000 },
     ];
 
     bounces.forEach((b) => {
@@ -207,7 +211,7 @@ export function playDiceRollSound() {
       const oscGain = ctx.createGain();
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(b.freq, t);
-      osc.frequency.exponentialRampToValueAtTime(b.freq * 0.4, t + b.len);
+      osc.frequency.exponentialRampToValueAtTime(b.freq * 0.35, t + b.len);
 
       oscGain.gain.setValueAtTime(b.vol, t);
       oscGain.gain.exponentialRampToValueAtTime(0.001, t + b.len);
@@ -230,7 +234,7 @@ export function playDiceRollSound() {
       clickFilter.frequency.setValueAtTime(b.hpf, t);
 
       const clickGain = ctx.createGain();
-      clickGain.gain.setValueAtTime(b.vol * 0.45, t);
+      clickGain.gain.setValueAtTime(b.vol * 0.5, t);
       clickGain.gain.exponentialRampToValueAtTime(0.001, t + b.len);
 
       click.connect(clickFilter);
