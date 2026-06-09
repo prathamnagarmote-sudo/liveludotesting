@@ -1,147 +1,117 @@
-.player-input {
-  display: grid;
-  grid-template-columns: 0.5fr 2fr 0.5fr;
-  justify-content: space-evenly;
+.playerInputRow {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   width: 100%;
-  padding-inline: 0;
-  transition: transform 0.2s ease;
 }
 
-.player-input:hover {
-  transform: translateY(-1px);
-}
-
-.player-input > * {
-  justify-self: center;
-  align-self: center;
-}
-
-.player-input-colour-dot {
-  width: calc(var(--dialog-width) * 0.075);
-  border-radius: 50%;
-  height: auto;
-  aspect-ratio: 1 / 1;
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
-  background: radial-gradient(circle at 35% 35%, #ffffff 0%, var(--player-color) 45%, rgba(0, 0, 0, 0.55) 100%) !important;
-  box-shadow: 
-    0 4px 8px rgba(0, 0, 0, 0.4), 
-    inset 0 -3px 6px rgba(0, 0, 0, 0.4),
-    inset 0 3px 6px rgba(255, 255, 255, 0.4);
-  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-  cursor: pointer;
-}
-
-.player-input-colour-dot:hover {
-  transform: scale(1.18);
-  box-shadow: 
-    0 6px 14px rgba(0, 0, 0, 0.55), 
-    0 0 12px var(--player-color),
-    inset 0 -3px 6px rgba(0, 0, 0, 0.4),
-    inset 0 3px 6px rgba(255, 255, 255, 0.4);
-}
-
-.player-name-input {
-  padding: calc(var(--dialog-width) / 45) calc(var(--dialog-width) / 30);
-  font-size: calc(var(--dialog-width) / 25);
-  background: rgba(255, 255, 255, 0.04);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  outline: none;
-  transition: all 0.25s ease-in-out;
-  width: 92%;
-}
-
-.player-name-input::placeholder {
-  color: rgba(255, 255, 255, 0.35);
-}
-
-.player-name-input:hover {
-  border-color: rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.player-name-input:focus-visible {
-  border-color: #1e88e5;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 
-    0 0 15px rgba(30, 136, 229, 0.35), 
-    inset 0 1px 2px rgba(255, 255, 255, 0.05);
-}
-
-.bot-status-btn {
-  width: calc(var(--dialog-width) / 10);
+.avatarContainer {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 12px;
-  height: auto;
-  aspect-ratio: 1 / 1;
+  width: 50px;
+  height: 50px;
+}
+
+.avatarCircle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.6) 100%);
+  border: 2px solid var(--player-color);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.avatarToken {
+  width: 32px;
+  height: 40px;
+  margin-top: 4px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.numberBadge {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #1a237e;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  z-index: 2;
+}
+
+.inputPill {
+  flex: 1;
+  background: #f5f5f5;
+  border-radius: 20px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  padding-inline: 12px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+.pencilIcon {
+  color: #1565c0;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.playerNameInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1c2d42;
+  width: 100%;
+  height: 100%;
+}
+
+.playerNameInput::placeholder {
+  color: #78909c;
+}
+
+.toggleBtn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  box-sizing: border-box;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3);
+  transition: all 0.2s ease;
+  color: #ffffff;
 }
 
-.bot-status-btn svg {
-  height: 55%;
-  width: 55%;
-  fill: currentColor;
-  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-/* Human Selected State */
-.human-selected {
-  background: rgba(30, 136, 229, 0.08);
-  border: 1px solid rgba(30, 136, 229, 0.3);
-  color: #42a5f5;
-  box-shadow: 0 4px 10px rgba(30, 136, 229, 0.1);
-}
-
-.human-selected:hover,
-.human-selected:focus-visible {
-  background: rgba(30, 136, 229, 0.18);
-  border-color: rgba(30, 136, 229, 0.6);
-  color: #64b5f6;
-  box-shadow: 
-    0 6px 15px rgba(30, 136, 229, 0.25),
-    0 0 10px rgba(30, 136, 229, 0.15);
+.toggleBtn:hover {
   transform: scale(1.08);
-  outline: none;
+  border-color: rgba(255,255,255,0.6);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.4);
 }
 
-.human-selected:hover svg {
-  transform: scale(1.15) translateY(-1px);
-}
-
-.human-selected:active {
+.toggleBtn:active {
   transform: scale(0.95);
 }
 
-/* Bot Selected State */
-.bot-selected {
-  background: rgba(224, 64, 251, 0.08);
-  border: 1px solid rgba(224, 64, 251, 0.3);
-  color: #e040fb;
-  box-shadow: 0 4px 10px rgba(224, 64, 251, 0.1);
-}
-
-.bot-selected:hover,
-.bot-selected:focus-visible {
-  background: rgba(224, 64, 251, 0.18);
-  border-color: rgba(224, 64, 251, 0.6);
-  color: #e1beef;
-  box-shadow: 
-    0 6px 15px rgba(224, 64, 251, 0.25),
-    0 0 10px rgba(224, 64, 251, 0.15);
-  transform: scale(1.08);
-  outline: none;
-}
-
-.bot-selected:hover svg {
-  transform: scale(1.15) rotate(15deg);
-}
-
-.bot-selected:active {
-  transform: scale(0.95);
+.toggleIcon {
+  width: 22px;
+  height: 22px;
 }
