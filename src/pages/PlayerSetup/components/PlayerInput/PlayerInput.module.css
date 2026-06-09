@@ -5,48 +5,143 @@
   align-items: center;
   width: 100%;
   padding-inline: 0;
+  transition: transform 0.2s ease;
 }
+
+.player-input:hover {
+  transform: translateY(-1px);
+}
+
 .player-input > * {
   justify-self: center;
   align-self: center;
 }
+
 .player-input-colour-dot {
-  width: calc(var(--dialog-width) * 0.065);
-  border-radius: 1000px;
+  width: calc(var(--dialog-width) * 0.075);
+  border-radius: 50%;
   height: auto;
   aspect-ratio: 1 / 1;
-  border: 1px solid black;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, var(--player-color) 45%, rgba(0, 0, 0, 0.55) 100%) !important;
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.4), 
+    inset 0 -3px 6px rgba(0, 0, 0, 0.4),
+    inset 0 3px 6px rgba(255, 255, 255, 0.4);
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: pointer;
 }
+
+.player-input-colour-dot:hover {
+  transform: scale(1.18);
+  box-shadow: 
+    0 6px 14px rgba(0, 0, 0, 0.55), 
+    0 0 12px var(--player-color),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.4),
+    inset 0 3px 6px rgba(255, 255, 255, 0.4);
+}
+
+.player-name-input {
+  padding: calc(var(--dialog-width) / 45) calc(var(--dialog-width) / 30);
+  font-size: calc(var(--dialog-width) / 25);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  outline: none;
+  transition: all 0.25s ease-in-out;
+  width: 92%;
+}
+
+.player-name-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.player-name-input:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.player-name-input:focus-visible {
+  border-color: #1e88e5;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 0 15px rgba(30, 136, 229, 0.35), 
+    inset 0 1px 2px rgba(255, 255, 255, 0.05);
+}
+
 .bot-status-btn {
-  background-color: var(--color-primary);
-  width: calc(var(--dialog-width) / 11.5);
+  width: calc(var(--dialog-width) / 10);
   display: flex;
   justify-content: center;
   align-items: center;
-  border: none;
-  border-radius: calc(var(--dialog-width) / 70);
+  border-radius: 12px;
   height: auto;
   aspect-ratio: 1 / 1;
   cursor: pointer;
-  transition: background-color 200ms;
-}
-.bot-status-btn:hover,
-.bot-status-btn:active,
-.bot-status-btn:focus-visible {
-  background-color: var(--color-primary-hover);
-}
-.player-name-input {
-  padding: calc(var(--dialog-width) / 49) calc(var(--dialog-width) / 35);
-  font-size: calc(var(--dialog-width) / 28);
-  border: 1px solid #ccc;
-  border-radius: calc(var(--dialog-width) / 62);
-  outline: none;
-  transition: border-color 200ms ease-in-out;
-  width: 100%;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-sizing: border-box;
 }
 
-.player-name-input:hover,
-.player-name-input:focus-visible {
-  border-color: #5b6ef5;
-  box-shadow: 0 0 0 2px rgba(91, 110, 245, 0.2);
+.bot-status-btn svg {
+  height: 55%;
+  width: 55%;
+  fill: currentColor;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Human Selected State */
+.human-selected {
+  background: rgba(30, 136, 229, 0.08);
+  border: 1px solid rgba(30, 136, 229, 0.3);
+  color: #42a5f5;
+  box-shadow: 0 4px 10px rgba(30, 136, 229, 0.1);
+}
+
+.human-selected:hover,
+.human-selected:focus-visible {
+  background: rgba(30, 136, 229, 0.18);
+  border-color: rgba(30, 136, 229, 0.6);
+  color: #64b5f6;
+  box-shadow: 
+    0 6px 15px rgba(30, 136, 229, 0.25),
+    0 0 10px rgba(30, 136, 229, 0.15);
+  transform: scale(1.08);
+  outline: none;
+}
+
+.human-selected:hover svg {
+  transform: scale(1.15) translateY(-1px);
+}
+
+.human-selected:active {
+  transform: scale(0.95);
+}
+
+/* Bot Selected State */
+.bot-selected {
+  background: rgba(224, 64, 251, 0.08);
+  border: 1px solid rgba(224, 64, 251, 0.3);
+  color: #e040fb;
+  box-shadow: 0 4px 10px rgba(224, 64, 251, 0.1);
+}
+
+.bot-selected:hover,
+.bot-selected:focus-visible {
+  background: rgba(224, 64, 251, 0.18);
+  border-color: rgba(224, 64, 251, 0.6);
+  color: #e1beef;
+  box-shadow: 
+    0 6px 15px rgba(224, 64, 251, 0.25),
+    0 0 10px rgba(224, 64, 251, 0.15);
+  transform: scale(1.08);
+  outline: none;
+}
+
+.bot-selected:hover svg {
+  transform: scale(1.15) rotate(15deg);
+}
+
+.bot-selected:active {
+  transform: scale(0.95);
 }

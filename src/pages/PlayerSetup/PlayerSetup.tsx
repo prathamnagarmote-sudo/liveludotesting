@@ -97,14 +97,23 @@ function PlayerSetup() {
         }
       >
         <div className={styles.playerCountSelector}>
-          <button className={styles.playerCount} onClick={() => setPlayerCount(2)}>
-            2
+          <button
+            className={`${styles.playerCount} ${playerCount === 2 ? styles.active : ''}`}
+            onClick={() => setPlayerCount(2)}
+          >
+            2 Players
           </button>
-          <button className={styles.playerCount} onClick={() => setPlayerCount(3)}>
-            3
+          <button
+            className={`${styles.playerCount} ${playerCount === 3 ? styles.active : ''}`}
+            onClick={() => setPlayerCount(3)}
+          >
+            3 Players
           </button>
-          <button className={styles.playerCount} onClick={() => setPlayerCount(4)}>
-            4
+          <button
+            className={`${styles.playerCount} ${playerCount === 4 ? styles.active : ''}`}
+            onClick={() => setPlayerCount(4)}
+          >
+            4 Players
           </button>
         </div>
         <div className={styles.playerInputs}>

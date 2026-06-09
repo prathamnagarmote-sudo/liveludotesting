@@ -15,10 +15,13 @@ type Props = {
 
 function PlayerInput({ colour, isBot, name, onBotStatusChange, onNameChange }: Props) {
   return (
-    <div className={styles.playerInput}>
+    <div className={`${styles.playerInput} ${isBot ? styles.isBot : styles.isHuman}`}>
       <span
         className={styles.playerInputColourDot}
-        style={{ backgroundColor: playerColours[colour] }}
+        style={{
+          backgroundColor: playerColours[colour],
+          ['--player-color' as any]: playerColours[colour]
+        }}
       />
       <input
         type="text"
@@ -28,7 +31,7 @@ function PlayerInput({ colour, isBot, name, onBotStatusChange, onNameChange }: P
         onChange={(e) => onNameChange(e.target.value.slice(0, MAX_PLAYER_NAME_LENGTH))}
       />
       <button
-        className={styles.botStatusBtn}
+        className={`${styles.botStatusBtn} ${isBot ? styles.botSelected : styles.humanSelected}`}
         data-tooltip-id="bot-status-tooltip"
         data-tooltip-content={isBot ? 'Bot' : 'Human'}
         aria-label="Toggle Ludo bot on or off"

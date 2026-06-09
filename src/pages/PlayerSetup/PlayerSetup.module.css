@@ -4,7 +4,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
 }
+
 .player-setup-dialog {
   position: relative;
   display: flex;
@@ -13,53 +15,75 @@
   height: 55vh;
   width: auto;
   aspect-ratio: 1.8 / 1.5;
-  background-color: white;
-  border-radius: 3%;
+  background: rgba(26, 18, 12, 0.82);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  border-radius: 24px;
   overflow: hidden;
-  -moz-box-shadow: 0px 0px 15px 1px rgba(0, 0, 0, 0.75);
-  -webkit-box-shadow: 0px 0px 15px 1px rgba(0, 0, 0, 0.75);
-  box-shadow: 0px 0px 15px 1px rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 30px 60px rgba(0, 0, 0, 0.6), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 0 40px rgba(30, 136, 229, 0.15);
 }
+
 .player-count-selector {
   position: relative;
-  height: 9%;
+  height: 14%;
   width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  border-bottom: 1px solid #aaa;
+  background-color: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px;
+  box-sizing: border-box;
 }
 
 .player-count-selector::before {
   content: '';
   position: absolute;
-  bottom: 0;
-  height: 12.5%;
-  width: calc(var(--dialog-width) / 3);
-  background-color: var(--color-primary);
-  border-radius: 10px;
-  transform: translateX(calc(var(--dialog-width) / 3 * (var(--player-count) - 2)));
-  transition: transform 250ms ease;
-  z-index: 10;
+  top: 6px;
+  bottom: 6px;
+  height: calc(100% - 12px);
+  width: calc((var(--dialog-width) - 12px) / 3);
+  background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+  border-radius: 14px;
+  transform: translateX(calc((var(--dialog-width) - 12px) / 3 * (var(--player-count) - 2)));
+  transition: transform 350ms cubic-bezier(0.25, 0.8, 0.25, 1);
+  z-index: 1;
+  box-shadow: 0 4px 15px rgba(30, 136, 229, 0.4);
 }
+
 .player-count {
   background: none;
   border: none;
-  font-size: calc(var(--dialog-width) / 23);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: calc(var(--dialog-width) / 25);
+  font-weight: 500;
   transition:
-    background-color 250ms ease-in-out,
-    font-size 100ms ease;
+    color 250ms ease,
+    text-shadow 250ms ease;
   user-select: none;
-}
-.player-count:hover {
-  background-color: #ddd;
+  z-index: 2;
   cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.player-count:active {
-  font-size: calc(var(--dialog-width) / 26);
+.player-count:hover {
+  color: rgba(255, 255, 255, 0.85);
 }
+
+.player-count.active {
+  color: #ffffff;
+  font-weight: 600;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
 .player-inputs {
-  padding-top: calc(var(--dialog-width) / 20);
+  padding-top: calc(var(--dialog-width) / 22);
+  padding-inline: calc(var(--dialog-width) / 16);
   flex: 1;
   min-height: 0;
   display: flex;
@@ -70,71 +94,102 @@
 
 .play-btn {
   height: auto;
-  background-color: var(--color-primary);
+  background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
   color: white;
-  border: none;
-  font-size: calc(var(--dialog-width) / 17);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: calc(var(--dialog-width) / 18);
+  font-weight: 600;
+  letter-spacing: 2px;
   margin-top: calc(var(--dialog-width) / 35);
-  margin-bottom: calc(var(--dialog-width) / 25);
-  padding-block: calc(var(--dialog-width) / 40);
-  padding-inline: calc(var(--dialog-width) / 20);
-  border-radius: calc(var(--dialog-width) / 45);
-  transition:
-    background-color 0.2s ease,
-    transform 0.2s ease;
+  margin-bottom: calc(var(--dialog-width) / 22);
+  padding-block: calc(var(--dialog-width) / 38);
+  padding-inline: calc(var(--dialog-width) / 10);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(30, 136, 229, 0.35);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   text-decoration: none;
   cursor: pointer;
+  text-align: center;
+  display: inline-block;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
+
 .play-btn:hover,
-.play-btn:active,
 .play-btn:focus-visible {
-  background-color: var(--color-primary-hover);
-  transform: scale(1.05);
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 25px rgba(30, 136, 229, 0.55), 
+    0 0 15px rgba(30, 136, 229, 0.25);
+  outline: none;
+}
+
+.play-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 3px 10px rgba(30, 136, 229, 0.4);
 }
 
 .version {
   position: absolute;
   bottom: 0;
   right: 0;
-  padding: calc(var(--dialog-width) / 60);
-  font-size: calc(var(--dialog-width) / 30);
-  color: rgba(0, 0, 0, 0.65);
+  padding: calc(var(--dialog-width) / 55);
+  font-size: calc(var(--dialog-width) / 32);
+  color: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
 }
 
 .go-to-home {
   position: absolute;
-  top: 0;
-  left: 0;
-  background-color: var(--color-primary);
+  top: 24px;
+  left: 24px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: white;
-  border: none;
-  height: 2rem;
-  width: 2rem;
-  border-bottom-right-radius: 0.25em;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  height: 48px;
+  width: 48px;
+  border-radius: 50%;
   cursor: pointer;
   text-decoration: none;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-  transition:
-    background-color 0.2s ease,
-    transform 0.1s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .go-to-home > svg {
-  height: 1.6rem;
+  height: 20px;
+  width: 20px;
+  fill: currentColor;
+  transition: transform 0.3s ease;
 }
 
 .go-to-home:hover,
-.go-to-home:active,
 .go-to-home:focus-visible {
-  background-color: var(--color-primary-hover);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(30, 136, 229, 0.4);
+  box-shadow: 
+    0 8px 24px rgba(30, 136, 229, 0.25), 
+    0 0 10px rgba(30, 136, 229, 0.2);
+  transform: scale(1.08);
+  outline: none;
+}
+
+.go-to-home:hover > svg {
+  transform: scale(1.1) rotate(-10deg);
+}
+
+.go-to-home:active {
+  transform: scale(0.95);
 }
 
 @container (max-width: 650px) {
   .player-setup-dialog {
     height: auto;
     width: 92%;
+    border-radius: 20px;
   }
 }
