@@ -69,35 +69,81 @@
   transform: rotate(-30deg);
 }
 
-/* Header styling */
-.header {
-  text-align: center;
-  z-index: 10;
-  animation: fadeInDown 1s ease-out;
+/* Logo Header */
+.logoHeader {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  width: 100%;
 }
 
 .crown {
-  font-size: 2.5rem;
+  width: 40px;
+  height: 24px;
   margin-bottom: -10px;
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5));
+  z-index: 2;
 }
 
-.title {
-  font-size: 3.5rem;
-  font-weight: 900;
-  margin: 0;
-  background: linear-gradient(180deg, #fff3c4 0%, #d4af37 50%, #996515 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
-  letter-spacing: 2px;
+.looserBanner {
+  background: linear-gradient(180deg, #1e88e5 0%, #1565c0 100%);
+  border: 2px solid #64b5f6;
+  border-radius: 8px;
+  padding: 4px 16px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  z-index: 3;
+  margin-bottom: -12px;
 }
 
-.subtitle {
-  font-size: 1.1rem;
-  color: #ffeba1;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+.looserBanner span {
+  font-weight: 800;
+  font-size: 16px;
   letter-spacing: 1px;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.ludoTextContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+}
+
+.ludoText {
+  font-size: 64px;
+  font-weight: 900;
+  display: flex;
+  gap: 2px;
+  text-shadow: 
+    0 4px 0 #000,
+    0 6px 12px rgba(0,0,0,0.6);
+  margin: 0;
+  line-height: 1;
+}
+
+.letterL { color: #e53935; }
+.letterU { color: #fdd835; }
+.letterD { color: #43a047; }
+.letterO { color: #1e88e5; }
+
+.pawnLeft, .pawnRight {
+  width: 45px;
+  height: 55px;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+}
+
+.dieRight {
+  position: absolute;
+  right: -25px;
+  bottom: -5px;
+  width: 35px;
+  height: 35px;
+  transform: rotate(15deg);
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
 }
 
 /* Ludo Graphic Area */
@@ -145,30 +191,38 @@
   flex-direction: column;
   align-items: center;
   z-index: 10;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 1rem 3rem;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-  animation: pulseBg 2s infinite alternate;
+  width: 60%;
+  max-width: 250px;
+  margin-bottom: 2.5rem;
 }
 
-.rollingDice {
-  width: 60px;
-  height: 60px;
-  margin-bottom: 0.5rem;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
+.progressBarWrapper {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  border: 2px solid #d4af37;
+  overflow: hidden;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.6);
+  position: relative;
 }
 
-.loadingText {
-  font-size: 1.5rem;
+.progressBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffca28 0%, #f57c00 100%);
+  border-radius: 4px;
+  transition: width 0.1s ease-out;
+  box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.4);
+}
+
+.progressText {
+  margin-top: 8px;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #ffeba1;
-  letter-spacing: 4px;
-  margin: 0;
+  letter-spacing: 2px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-  min-width: 150px;
-  text-align: left;
+  animation: pulseOpacity 1.5s infinite alternate;
 }
 
 /* Animations */
@@ -179,7 +233,7 @@
 
 @keyframes floatBoard {
   0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(1deg); }
+  50% { transform: translateY(-10px) rotate(0deg); }
 }
 
 @keyframes hop {

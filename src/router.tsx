@@ -6,7 +6,7 @@ import ErrorBoundary from './pages/ErrorBoundary/ErrorBoundary.tsx';
 import { lazy, Suspense, type LazyExoticComponent, type ReactElement } from 'react';
 
 const Play = lazy(() => import('./pages/Play/Play.tsx'));
-const PlayerSetup = lazy(() => import('./pages/PlayerSetup/PlayerSetup.tsx'));
+import PlayerSetup from './pages/PlayerSetup/PlayerSetup.tsx';
 const HowToPlay = lazy(() => import('./pages/HowToPlay/HowToPlay.tsx'));
 
 const wrapWithSuspense = (Component: LazyExoticComponent<() => ReactElement>) => (
@@ -30,7 +30,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/setup',
-        element: wrapWithSuspense(PlayerSetup),
+        element: <PlayerSetup />,
       },
       {
         path: '/how-to-play',
