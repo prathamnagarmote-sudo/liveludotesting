@@ -11,6 +11,7 @@ import type { AppDispatch, RootState } from '../../../../state/store';
 import { rollDiceThunk } from '../../../../state/thunks/rollDiceThunk';
 import { playerColours } from '../../../../game/players/constants';
 import { isAnyTokenActiveOfColour } from '../../../../game/tokens/logic';
+import { getPlayerScore } from '../../../../game/score/logic';
 import TokenImage from '../../../../assets/token.svg?react';
 import styles from './Dice.module.css';
 import clsx from 'clsx';
@@ -76,16 +77,21 @@ function Dice({ colour, onDiceClick, playerName }: Props) {
       })}
     >
       <div className={styles.playerInfo}>
-        <TokenImage
-          className={styles.miniToken}
-          aria-hidden="true"
-          style={
-            {
-              '--fill-colour': woodStainColours[colour],
-            } as React.CSSProperties
-          }
-        />
-        <span className={styles.playerName}>{playerName}</span>
+        <div className={styles.playerNameRow}>
+          <TokenImage
+            className={styles.miniToken}
+            aria-hidden="true"
+            style={
+              {
+                '--fill-colour': woodStainColours[colour],
+              } as React.CSSProperties
+            }
+          />
+          <span className={styles.playerName}>{playerName}</span>
+        </div>
+        <div className={styles.playerScore}>
+          {getPlayerScore(players.find((p) => p.colour === colour)!)}
+        </div>
       </div>
       <div className={styles.diceWrapper}>
         <button

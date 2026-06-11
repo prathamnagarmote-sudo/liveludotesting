@@ -1,17 +1,19 @@
-import type { TPlayerNameAndColour } from '../../../../types';
+import type { TPlayer } from '../../../../types';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import GameFinishPlayerItem from '../GameFinishPlayerItem/GameFinishPlayerItem';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { getLeaderboardStandings } from '../../../../game/score/logic';
 import styles from './GameFinishedScreen.module.css';
 
 type Props = {
-  playerFinishOrder: TPlayerNameAndColour[];
+  players: TPlayer[];
 };
 
-function GameFinishedScreen({ playerFinishOrder }: Props) {
+function GameFinishedScreen({ players }: Props) {
   const { width, height } = useWindowSize();
+  const standings = getLeaderboardStandings(players);
   return (
     <AnimatePresence>
       <motion.div className={styles.gameFinishedScreen}>
@@ -32,12 +34,13 @@ function GameFinishedScreen({ playerFinishOrder }: Props) {
         >
           <span className={styles.gameFinishedText}>GAME FINISHED!</span>
           <section className={styles.gameResult}>
-            {playerFinishOrder.map((p, i) => (
+            {standings.map((p, i) => (
               <GameFinishPlayerItem
                 colour={p.colour}
-                isLast={i === playerFinishOrder.length - 1}
+                isLast={i === standings.length - 1}
                 name={p.name}
-                rank={i + 1}
+                rank={p.rank}
+                score={p.score}
                 key={i}
               />
             ))}

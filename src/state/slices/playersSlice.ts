@@ -181,6 +181,11 @@ const reducers = {
     const token = getToken(state, action.payload.colour, action.payload.id);
     token.tokenAlignmentData = action.payload.newAlignmentData;
   },
+  endGameDueToTimeout: (state: TPlayerState) => {
+    state.isGameEnded = true;
+    // Note: We don't populate playerFinishOrder here because the UI will instead use 
+    // getLeaderboardStandings() dynamically from the final state.
+  },
   clearPlayersState: () => initialState,
 };
 
@@ -204,6 +209,7 @@ export const {
   setIsAnyTokenMoving,
   markTokenAsReachedHome,
   setTokenAlignmentData,
+  endGameDueToTimeout,
   clearPlayersState,
 } = playersSlice.actions;
 

@@ -1,4 +1,4 @@
-import { type TPlayer, type TPlayerColour } from '../../../../types';
+import { type TPlayerColour } from '../../../../types';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../state/store';
 import rank1Image from '../../../../assets/player_rank_images/1.png';
@@ -13,17 +13,10 @@ type Props = {
   name: string;
   colour: TPlayerColour;
   isLast: boolean;
+  score: number;
 };
 
-function getTimeString(startTime: number, finishTime: number, inactiveTime: number): string {
-  if (finishTime === -1 || startTime === -1 || inactiveTime === -1) return '00:00';
-  const diff = Math.abs(finishTime - startTime - inactiveTime);
-  const minutes = diff / 1000 / 60;
-  const seconds = diff / 1000 - Math.floor(minutes) * 60;
-  const minutesStr = Math.floor(minutes).toString().padStart(2, '0');
-  const secondsStr = Math.floor(seconds).toString().padStart(2, '0');
-  return `${minutesStr}:${secondsStr}`;
-}
+
 
 function getRankImage(rank: number): string {
   switch (rank) {
@@ -38,11 +31,8 @@ function getRankImage(rank: number): string {
   }
 }
 
-function GameFinishPlayerItem({ colour, isLast, name, rank }: Props) {
+function GameFinishPlayerItem({ colour, isLast, name, rank, score }: Props) {
   const { boardTileSize } = useSelector((state: RootState) => state.board);
-  const { players } = useSelector((state: RootState) => state.players);
-  const { gameStartTime, gameInactiveTime } = useSelector((state: RootState) => state.session);
-  const { playerFinishTime } = players.find((p) => p.colour === colour) as TPlayer;
 
   return (
     <AnimatePresence>
@@ -63,7 +53,7 @@ function GameFinishPlayerItem({ colour, isLast, name, rank }: Props) {
         ></span>
         <span className={styles.gameFinishPlayerName}>{name}</span>
         <span className={styles.gameFinishTime}>
-          {isLast ? '' : getTimeString(gameStartTime, playerFinishTime, gameInactiveTime)}
+          {isLast ? `Score: ${score}` : `Score: ${score}`}
         </span>
       </motion.div>
     </AnimatePresence>
