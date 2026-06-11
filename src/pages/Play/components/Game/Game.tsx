@@ -13,7 +13,9 @@ import type { TPlayerInitData } from '../../../../types';
 import { useNavigate } from 'react-router-dom';
 import { playerCountToWord } from '../../../../game/players/logic';
 import { usePageLeaveBlocker } from '../../../../hooks/usePageLeaveBlocker';
-import { addToGameInactiveTime, setGameStartTime } from '../../../../state/slices/sessionSlice';
+import { addToGameInactiveTime, setGameStartTime, setMatchDuration } from '../../../../state/slices/sessionSlice';
+import { useGameTimer } from '../../../../hooks/useGameTimer';
+import ScoreBoard from '../ScoreBoard/ScoreBoard';
 import styles from './Game.module.css';
 
 
@@ -26,17 +28,23 @@ type Props = {
 function Game({ initData }: Props) {
   const dispatch = useDispatch<AppDispatch>();
   const boardTileSize = useSelector((state: RootState) => state.board.boardTileSize);
-  const { playerSequence, isGameEnded, playerFinishOrder, currentPlayerColour, players } =
+  const { playerSequence, isGameEnded, currentPlayerColour, players } =
     useSelector((state: RootState) => state.players);
   const playersRegisteredInitiallyRef = useRef(true);
   const gameInactiveStartTime = useRef(0);
   const navigate = useNavigate();
   const moveAndCapture = useMoveAndCaptureToken();
   usePageLeaveBlocker(!isGameEnded && import.meta.env.PROD);
+  useGameTimer();
+
   useEffect(() => {
     if (initData.length === 0) return;
     dispatch(setPlayerSequence({ playerCount: playerCountToWord(initData.length) }));
     dispatch(setGameStartTime(Date.now()));
+    
+    // Set match duration based on player count: 5 mins for 2P, 10 mins for 4P
+    const matchDurationMs = initData.length === 2 ? 300000 : 600000;
+    dispatch(setMatchDuration(matchDurationMs));
   }, [dispatch, initData.length]);
 
   useEffect(() => {
@@ -91,6 +99,7 @@ function Game({ initData }: Props) {
         } as React.CSSProperties
       }
     >
+      <ScoreBoard />
       <Board onDiceClick={handleDiceRoll} />
       <button
         type="button"
@@ -100,7 +109,7 @@ function Game({ initData }: Props) {
       >
         &times;
       </button>
-      {isGameEnded && <GameFinishedScreen playerFinishOrder={playerFinishOrder} />}
+      {isGameEnded && <GameFinishedScreen players={players} />}
     </div>
   );
 }

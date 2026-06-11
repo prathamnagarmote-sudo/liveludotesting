@@ -1,4 +1,4 @@
-import type { TPlayerNameAndColour, TPlayer } from '../../../../types';
+import type { TPlayer } from '../../../../types';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import GameFinishPlayerItem from '../GameFinishPlayerItem/GameFinishPlayerItem';
@@ -6,27 +6,24 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../../state/store';
+import { getLeaderboardStandings } from '../../../../game/score/logic';
 import styles from './GameFinishedScreen.module.css';
 
 type Props = {
-  playerFinishOrder: TPlayerNameAndColour[];
+  players: TPlayer[];
 };
 
-const getPlayerScore = (player: TPlayer) => {
-  const homeCount = player.tokens.filter((t) => t.hasTokenReachedHome).length;
-  const unlockedCount = player.tokens.filter((t) => !t.isLocked && !t.hasTokenReachedHome).length;
-  return homeCount * 100 + unlockedCount;
-};
-
-function GameFinishedScreen({ playerFinishOrder }: Props) {
+function GameFinishedScreen({ players }: Props) {
   const { width, height } = useWindowSize();
-  const { isGameOver, players } = useSelector((state: RootState) => state.players);
+  const { isGameOver } = useSelector((state: RootState) => state.players);
   const inactivePlayer = players.find((p) => p.missedTurns >= 3);
+  const standings = getLeaderboardStandings(players);
 
-  const winner = isGameOver
-    ? [...players]
-        .filter((p) => p.missedTurns < 3)
-        .sort((a, b) => getPlayerScore(b) - getPlayerScore(a))[0]
+  const winnerStanding = isGameOver
+    ? standings.find((s) => {
+        const p = players.find((player) => player.colour === s.colour);
+        return p && p.missedTurns < 3;
+      })
     : null;
 
   return (
@@ -56,15 +53,16 @@ function GameFinishedScreen({ playerFinishOrder }: Props) {
             </div>
           )}
           <section className={styles.gameResult}>
-            {isGameOver && winner ? (
-              <p className={styles.winnerDeclaration}>🏆 {winner.name} is the Winner! 🏆</p>
+            {isGameOver && winnerStanding ? (
+              <p className={styles.winnerDeclaration}>🏆 {winnerStanding.name} is the Winner! 🏆</p>
             ) : (
-              playerFinishOrder.map((p, i) => (
+              standings.map((p, i) => (
                 <GameFinishPlayerItem
                   colour={p.colour}
-                  isLast={i === playerFinishOrder.length - 1}
+                  isLast={i === standings.length - 1}
                   name={p.name}
-                  rank={i + 1}
+                  rank={p.rank}
+                  score={p.score}
                   key={i}
                 />
               ))

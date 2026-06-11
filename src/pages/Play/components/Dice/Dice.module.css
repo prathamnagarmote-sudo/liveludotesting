@@ -56,17 +56,39 @@
     0 10px 25px -5px rgba(0, 0, 0, 0.5);
 }
 
-/* Left part: player name & mini token */
-.player-info {
+/* Left part: player info */
+.playerInfo {
   display: flex;
-  align-items: center;
-  gap: calc(var(--board-tile-size) * 0.25);
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(var(--board-tile-size) * 0.05);
   flex-grow: 1;
   overflow: hidden;
 }
-.dice-container.green .player-info,
-.dice-container.yellow .player-info {
+
+.playerNameRow {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--board-tile-size) * 0.25);
+}
+
+.dice-container.green .playerNameRow,
+.dice-container.yellow .playerNameRow {
   flex-direction: row-reverse;
+}
+
+.playerScore {
+  color: #64b5f6;
+  font-weight: 800;
+  font-size: calc(var(--board-tile-size) * 0.55);
+  margin-left: calc(var(--board-tile-size) * 1.0); 
+  text-transform: uppercase;
+}
+.dice-container.green .playerScore,
+.dice-container.yellow .playerScore {
+  margin-left: 0;
+  margin-right: calc(var(--board-tile-size) * 1.0);
+  text-align: right;
 }
 
 .mini-token {
