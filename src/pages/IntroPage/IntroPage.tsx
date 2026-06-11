@@ -63,10 +63,8 @@ export default function IntroPage() {
     const startTime = Date.now();
     const minDuration = 500; // 0.5 seconds minimum visual loading time
 
-    // Preload the lobby page (PlayerSetup) chunk
-    import('../PlayerSetup/PlayerSetup.tsx')
-      .then(() => { chunkReady = true; })
-      .catch(() => { chunkReady = true; });
+    // PlayerSetup is now statically bundled, so we just wait for the visual timer
+    chunkReady = true;
 
     // Smoothly animate the progress bar over minDuration
     const progressInterval = setInterval(() => {
