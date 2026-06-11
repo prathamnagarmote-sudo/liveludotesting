@@ -15,6 +15,8 @@ import TokenImage from '../../../../assets/token.svg?react';
 import styles from './Dice.module.css';
 import clsx from 'clsx';
 import { playDiceRollSound } from '../../../../utils/audio';
+import { useTurnTimer } from '../../../../hooks/useTurnTimer';
+import DiceTimerBorder from './DiceTimerBorder';
 
 const woodStainColours: Record<TPlayerColour, string> = {
   red: '#ba2b20',
@@ -54,6 +56,11 @@ function Dice({ colour, onDiceClick, playerName }: Props) {
     isPlaceholderShowing ||
     isBot;
 
+  const player = players.find((p) => p.colour === colour);
+  const missedTurns = player?.missedTurns ?? 0;
+
+  const { progressPercentage, phase, isCritical, shouldShowTimer } = useTurnTimer(colour, !isDiceDisabled);
+
   const handleDiceClick = useCallback(() => {
     if (isDiceDisabled) return;
     playDiceRollSound();
@@ -73,8 +80,15 @@ function Dice({ colour, onDiceClick, playerName }: Props) {
     <div
       className={clsx(styles.diceContainer, styles[colour], {
         [styles.activeContainer]: !isDiceDisabled,
+        [styles.criticalShake]: isCritical,
       })}
     >
+      <DiceTimerBorder progressPercentage={progressPercentage} phase={phase} shouldShowTimer={shouldShowTimer} />
+      <div className={clsx(styles.missDots, styles[colour])}>
+        <span className={clsx(styles.dot, missedTurns >= 1 ? styles.missed : styles.active)} />
+        <span className={clsx(styles.dot, missedTurns >= 2 ? styles.missed : styles.active)} />
+        <span className={clsx(styles.dot, missedTurns >= 3 ? styles.missed : styles.active)} />
+      </div>
       <div className={styles.playerInfo}>
         <TokenImage
           className={styles.miniToken}

@@ -9,6 +9,7 @@ export const DUMMY_PLAYERS: TPlayer[] = [
     numberOfConsecutiveSix: 0,
     tokens: genLockedTokens('blue'),
     playerFinishTime: -1,
+    missedTurns: 0,
   },
   {
     colour: 'red',
@@ -17,6 +18,7 @@ export const DUMMY_PLAYERS: TPlayer[] = [
     numberOfConsecutiveSix: 0,
     tokens: genLockedTokens('red'),
     playerFinishTime: -1,
+    missedTurns: 0,
   },
   {
     colour: 'green',
@@ -25,6 +27,7 @@ export const DUMMY_PLAYERS: TPlayer[] = [
     numberOfConsecutiveSix: 0,
     tokens: genLockedTokens('green'),
     playerFinishTime: -1,
+    missedTurns: 0,
   },
   {
     colour: 'yellow',
@@ -33,5 +36,6 @@ export const DUMMY_PLAYERS: TPlayer[] = [
     numberOfConsecutiveSix: 0,
     tokens: genLockedTokens('yellow'),
     playerFinishTime: -1,
+    missedTurns: 0,
   },
 ];

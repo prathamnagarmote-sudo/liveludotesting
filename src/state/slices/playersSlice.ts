@@ -19,6 +19,7 @@ type TPlayerState = {
   playerSequence: TPlayerColour[];
   isAnyTokenMoving: boolean;
   isGameEnded: boolean;
+  isGameOver: boolean;
   playerFinishOrder: TPlayerNameAndColour[];
 };
 
@@ -28,6 +29,7 @@ export const initialState: TPlayerState = {
   playerSequence: [],
   isAnyTokenMoving: false,
   isGameEnded: false,
+  isGameOver: false,
   playerFinishOrder: [],
 };
 
@@ -63,6 +65,7 @@ const reducers = {
       tokens: genLockedTokens(action.payload.colour),
       numberOfConsecutiveSix: 0,
       playerFinishTime: -1,
+      missedTurns: 0,
     });
   },
 
@@ -148,6 +151,15 @@ const reducers = {
     player.numberOfConsecutiveSix = 0;
   },
 
+  incrementMissedTurns: (state: TPlayerState, action: PayloadAction<TPlayerColour>) => {
+    const player = getPlayer(state, action.payload);
+    player.missedTurns = (player.missedTurns || 0) + 1;
+    if (player.missedTurns >= 3) {
+      state.isGameEnded = true;
+      state.isGameOver = true;
+    }
+  },
+
   setIsAnyTokenMoving: (state: TPlayerState, action: PayloadAction<boolean>) => {
     state.isAnyTokenMoving = action.payload;
   },
@@ -201,6 +213,7 @@ export const {
   lockToken,
   incrementNumberOfConsecutiveSix,
   resetNumberOfConsecutiveSix,
+  incrementMissedTurns,
   setIsAnyTokenMoving,
   markTokenAsReachedHome,
   setTokenAlignmentData,

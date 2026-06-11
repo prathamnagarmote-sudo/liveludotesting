@@ -51,12 +51,9 @@
 
 /* Glowing active border tray */
 .dice-container.activeContainer {
-  border-color: rgba(255, 214, 0, 0.7);
   box-shadow: 
-    0 0 15px rgba(255, 214, 0, 0.35),
-    inset 0 0 6px rgba(255, 214, 0, 0.15),
+    inset 0 0 6px rgba(255, 255, 255, 0.1),
     0 10px 25px -5px rgba(0, 0, 0, 0.5);
-  animation: activePanelPulse 1.6s infinite ease-in-out;
 }
 
 /* Left part: player name & mini token */
@@ -237,17 +234,13 @@
 
 @keyframes activePanelPulse {
   0%, 100% {
-    border-color: rgba(255, 214, 0, 0.65);
     box-shadow: 
-      0 0 10px rgba(255, 214, 0, 0.3),
-      inset 0 0 4px rgba(255, 214, 0, 0.15),
+      inset 0 0 4px rgba(255, 255, 255, 0.1),
       0 10px 25px -5px rgba(0, 0, 0, 0.5);
   }
   50% {
-    border-color: rgba(255, 214, 0, 1);
     box-shadow: 
-      0 0 20px 4px rgba(255, 214, 0, 0.65),
-      inset 0 0 8px 1px rgba(255, 214, 0, 0.35),
+      inset 0 0 8px 1px rgba(255, 255, 255, 0.2),
       0 10px 25px -5px rgba(0, 0, 0, 0.5);
   }
 }
@@ -278,3 +271,128 @@
     transform: rotateX(360deg) rotateY(720deg) rotateZ(360deg);
   }
 }
+
+/* Premium Turn Timer Styles */
+.timerWrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 100;
+  overflow: visible;
+}
+
+.timerSvg {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  overflow: visible;
+}
+
+.timerRect {
+  fill: none;
+  stroke-width: 4px;
+  stroke-linecap: round;
+  transition: stroke 0.3s ease-out, filter 0.3s ease-out;
+  transform-origin: center;
+}
+
+.phase1 .timerRect {
+  stroke: #32CD32;
+  filter: drop-shadow(0 0 6px #FFF9C4);
+}
+
+.phase2 .timerRect {
+  stroke: #FFC107;
+  filter: drop-shadow(0 0 8px #FFCDD2);
+  animation: phase2Pulse 1s infinite alternate;
+}
+
+.phase3 .timerRect {
+  stroke: #F44336;
+  filter: drop-shadow(0 0 12px #FF5252);
+  animation: phase3Pulse 0.5s infinite alternate;
+}
+
+@keyframes phase2Pulse {
+  0% { filter: drop-shadow(0 0 6px rgba(255, 205, 210, 0.5)); }
+  100% { filter: drop-shadow(0 0 12px rgba(255, 205, 210, 0.9)); }
+}
+
+@keyframes phase3Pulse {
+  0% { filter: drop-shadow(0 0 10px rgba(255, 82, 82, 0.6)); }
+  100% { filter: drop-shadow(0 0 18px rgba(255, 82, 82, 1)); }
+}
+
+.criticalShake {
+  animation: containerShake 0.4s infinite cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes containerShake {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(1px, 1px) rotate(0.5deg); }
+  50% { transform: translate(-1px, -1px) rotate(-0.5deg); }
+  75% { transform: translate(-1px, 1px) rotate(0deg); }
+  100% { transform: translate(1px, -1px) rotate(-0.5deg); }
+}
+
+.missDots {
+  /* Change these values to customize the dot colors */
+  --dot-active-bg: #32CD32; /* Green */
+  --dot-active-shadow: rgba(50, 205, 50, 0.8);
+  --dot-missed-bg: #F44336; /* Red */
+  --dot-missed-shadow: rgba(244, 67, 54, 0.9);
+
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--board-tile-size) * 0.12);
+  padding: calc(var(--board-tile-size) * 0.16) calc(var(--board-tile-size) * 0.11);
+  border-radius: calc(var(--board-tile-size) * 0.14);
+  background: rgba(15, 23, 42, 0.6);
+  border: none;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 110;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* For blue and red (left side of the board), dots sit on the right of the dice box with more space */
+.missDots.blue,
+.missDots.red {
+  right: calc(var(--board-tile-size) * -0.62);
+}
+
+/* For green and yellow (right side of the board), dots sit on the left of the dice box with more space */
+.missDots.green,
+.missDots.yellow {
+  left: calc(var(--board-tile-size) * -0.62);
+}
+
+.dot {
+  width: calc(var(--board-tile-size) * 0.24);
+  height: calc(var(--board-tile-size) * 0.24);
+  border-radius: 50%;
+  transition: background-color 0.4s ease, box-shadow 0.4s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.dot.active {
+  background-color: var(--dot-active-bg);
+  box-shadow: 
+    0 0 5px var(--dot-active-shadow),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.dot.missed {
+  background-color: var(--dot-missed-bg);
+  box-shadow: 
+    0 0 8px var(--dot-missed-shadow),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
