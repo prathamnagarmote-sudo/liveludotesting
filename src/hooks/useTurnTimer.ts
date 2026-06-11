@@ -1,15 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useEffect, useRef, useState, useContext } from 'react';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { type RootState } from '../state/store';
 import { type TPlayerColour } from '../types';
 import { changeTurnThunk } from '../state/thunks/changeTurnThunk';
 import { useMoveAndCaptureToken } from './useMoveAndCaptureToken';
 import { incrementMissedTurns } from '../state/slices/playersSlice';
+import { OnlineGameContext } from '../pages/Play/components/Game/Game';
+import { getNakamaSocket } from '../services/nakama';
 
 const TOTAL_TURN_TIME_MS = 15000;
 
+const getNextTurnColour = (currentColour: TPlayerColour, playerSequence: TPlayerColour[]): TPlayerColour => {
+  const idx = playerSequence.indexOf(currentColour);
+  return playerSequence[(idx + 1) % playerSequence.length];
+};
+
 export function useTurnTimer(colour: TPlayerColour, isActiveContainer: boolean) {
   const dispatch = useDispatch<any>();
+  const store = useStore<RootState>();
+  const onlineContext = useContext(OnlineGameContext);
   const [timeLeftMs, setTimeLeftMs] = useState(TOTAL_TURN_TIME_MS);
   const { currentPlayerColour, isGameEnded } = useSelector(
     (state: RootState) => state.players
@@ -32,16 +41,31 @@ export function useTurnTimer(colour: TPlayerColour, isActiveContainer: boolean) 
     const updateTimer = (timestamp: number) => {
       if (!startTimeRef.current) startTimeRef.current = timestamp;
       const elapsed = timestamp - startTimeRef.current;
-      const remaining = Math.max(0, TOTAL_TURN_TIME_MS - elapsed);
+      const MathRemaining = Math.max(0, TOTAL_TURN_TIME_MS - elapsed);
       
-      setTimeLeftMs(remaining);
+      setTimeLeftMs(MathRemaining);
 
-      if (remaining > 0) {
+      if (MathRemaining > 0) {
         requestRef.current = requestAnimationFrame(updateTimer);
       } else {
         // Time is up! Skip turn and increment missed turns
         dispatch(incrementMissedTurns(colour));
-        dispatch(changeTurnThunk(moveAndCapture));
+        if (onlineContext?.isOnline) {
+          if (colour === onlineContext.myPlayerColour) {
+            try {
+              const freshState = store.getState();
+              const pSeq = freshState.players.playerSequence;
+              const nextColour = getNextTurnColour(colour, pSeq);
+              getNakamaSocket().sendMatchState(
+                onlineContext.roomId,
+                6,
+                JSON.stringify({ nextTurnColour: nextColour })
+              );
+            } catch (e) {}
+          }
+        } else {
+          dispatch(changeTurnThunk(moveAndCapture));
+        }
       }
     };
 
@@ -50,7 +74,7 @@ export function useTurnTimer(colour: TPlayerColour, isActiveContainer: boolean) 
     return () => {
       if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current);
     };
-  }, [shouldRunTimer, dispatch, moveAndCapture]);
+  }, [shouldRunTimer, dispatch, moveAndCapture, onlineContext, colour, store]);
 
   const progressPercentage = (timeLeftMs / TOTAL_TURN_TIME_MS) * 100;
   

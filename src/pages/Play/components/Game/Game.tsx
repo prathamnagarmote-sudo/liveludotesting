@@ -202,11 +202,11 @@ function Game({
 
       const localColor = pColour;
 
+      dispatch(setDiceNumberDirect({ colour: localColor, diceNumber: data.roll }));
       dispatch(setIsPlaceholderShowing({ colour: localColor, isPlaceholderShowing: true }));
 
       setTimeout(() => {
         dispatch(setIsPlaceholderShowing({ colour: localColor, isPlaceholderShowing: false }));
-        dispatch(setDiceNumberDirect({ colour: localColor, diceNumber: data.roll }));
 
         if (data.roll === 6) {
           dispatch(incrementNumberOfConsecutiveSix(localColor));
