@@ -1,8 +1,13 @@
 import { Client, Session } from '@heroiclabs/nakama-js';
 import type { Socket } from '@heroiclabs/nakama-js';
 
-const useSSL = false; // set to true if using https
-const client = new Client("defaultkey", window.location.hostname || "127.0.0.1", "7350", useSSL);
+const useSSL = import.meta.env.VITE_NAKAMA_SSL === 'true';
+const client = new Client(
+  import.meta.env.VITE_NAKAMA_KEY || "defaultkey",
+  import.meta.env.VITE_NAKAMA_HOST || window.location.hostname || "127.0.0.1",
+  import.meta.env.VITE_NAKAMA_PORT || "7350",
+  useSSL
+);
 
 let session: Session | null = null;
 let socket: Socket | null = null;

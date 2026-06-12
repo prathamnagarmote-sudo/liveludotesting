@@ -44,7 +44,7 @@ export const pwaOptions: Partial<VitePWAOptions> = {
     ],
     navigateFallback: '/index.html',
     mode: process.env.NODE_ENV,
-    maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
+    maximumFileSizeToCacheInBytes: 20 * 1024 * 1024, // 20 MB
     cleanupOutdatedCaches: true,
     clientsClaim: true,
     skipWaiting: false,

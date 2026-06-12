@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 176.79 146.85">
+  <defs>
+    <filter id="outer-glow-4" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur" stdDeviation="3"/>
+      <feFlood flood-color="#00dbff" flood-opacity="1"/>
+      <feComposite in2="blur" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-5" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur-2" stdDeviation="3"/>
+      <feFlood flood-color="#00dbff" flood-opacity="1"/>
+      <feComposite in2="blur-2" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <path d="m38.25,50.73v-16.6c0-13.36,10.83-24.19,24.19-24.19h78.42c13.36,0,24.19,10.83,24.19,24.19v78.42c0,13.36-10.83,24.19-24.19,24.19H62.45c-13.36,0-24.19-10.83-24.19-24.19v-16.6s-25.71-24.1-25.71-24.1l25.71-21.12Z" fill="none" filter="url(#outer-glow-4)" stroke="#00b7ff" stroke-miterlimit="10" stroke-width="3"/>
+  <path d="m38.25,50.73v-16.6c0-13.36,10.83-24.19,24.19-24.19h78.42c13.36,0,24.19,10.83,24.19,24.19v78.42c0,13.36-10.83,24.19-24.19,24.19H62.45c-13.36,0-24.19-10.83-24.19-24.19v-16.6s-25.71-24.1-25.71-24.1l25.71-21.12Z" fill="none" filter="url(#outer-glow-5)" stroke="#00dbff" stroke-miterlimit="10" stroke-width="3"/>
+</svg>

@@ -120,8 +120,8 @@ function PlayerSetup() {
               state: {
                 isOnline: false,
                 initData: [
-                  { name: currentUser?.userName || 'Player 1', isBot: false },
-                  { name: 'NovaRush', isBot: true }
+                  { name: currentUser?.userName || 'Player 1', isBot: false, avatarUrl: currentUser?.avatar_url },
+                  { name: 'NovaRush', isBot: true, avatarUrl: lobbyAvatarsList[1] || '' }
                 ]
               }
             });
@@ -372,6 +372,27 @@ function PlayerSetup() {
             </div>
           </div>
         )}
+
+        {/* Temporary Quick Play Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+             e.preventDefault();
+             navigate('/play', { 
+               state: { 
+                 initData: [
+                   { name: 'MAXY', isBot: false },
+                   { name: 'PLAYER', isBot: false },
+                   { name: 'ZENO', isBot: false },
+                   { name: 'REX', isBot: false },
+                 ]
+               } 
+             });
+          }}
+          style={{ display: 'block', width: '100%', maxWidth: '280px', margin: '20px auto', padding: '15px', backgroundColor: '#e53935', color: '#fff', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer', border: 'none', textAlign: 'center', position: 'relative', zIndex: 1000 }}
+        >
+          QUICK PLAY (TEMP 4-PLAYER MANUAL)
+        </button>
 
         {/* Buttons (Play / Cancel) */}
         {!isSearching ? (

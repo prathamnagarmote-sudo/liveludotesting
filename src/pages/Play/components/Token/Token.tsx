@@ -18,10 +18,10 @@ import clsx from 'clsx';
 import { getTokenDOMId } from '../../../../game/tokens/logic';
 
 const woodStainColours: Record<TPlayerColour, string> = {
-  red: '#ba2b20',
-  green: '#26632f',
-  blue: '#1b4b8f',
-  yellow: '#c28b17',
+  red: 'url(#token-grad-red)',
+  green: 'url(#token-grad-green)',
+  blue: 'url(#token-grad-blue)',
+  yellow: 'url(#token-grad-yellow)',
 };
 
 type Props = {
@@ -125,7 +125,7 @@ function Token({ colour, id, tokenClickData }: Props) {
           '--token-height': `${tokenHeight}px`,
           '--token-width': `${tokenWidth}px`,
           '--fill-colour': woodStainColours[colour],
-          transform: `translate3d(${x}, ${y}, 12px) scale(${scaleFactor}) rotateX(-12deg) rotateY(5deg)`,
+          transform: `translate3d(${x}, ${y}, 12px) scale(${scaleFactor})`,
         } as React.CSSProperties
       }
     >

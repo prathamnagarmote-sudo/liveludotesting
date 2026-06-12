@@ -1,5 +1,18 @@
 let audioCtx: AudioContext | null = null;
 
+function isMusicEnabled(): boolean {
+  if (typeof window === 'undefined') return true;
+  return localStorage.getItem('musicEnabled') !== 'false';
+}
+
+function triggerVibration(pattern: number | number[]) {
+  if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && navigator.vibrate) {
+    if (localStorage.getItem('vibrationEnabled') !== 'false') {
+      navigator.vibrate(pattern);
+    }
+  }
+}
+
 function getAudioContext(): AudioContext {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -15,7 +28,9 @@ function getAudioContext(): AudioContext {
  * Replaces the F1 racing engine sound with a crisp physical impact.
  */
 export function playEngineSound() {
+  if (!isMusicEnabled()) return;
   try {
+    triggerVibration(15);
     const ctx = getAudioContext();
     const now = ctx.currentTime;
 
@@ -73,7 +88,9 @@ export function playEngineSound() {
  * Sweeps a frictional slide followed by a sharp physical impact clack.
  */
 export function playCrashSound() {
+  if (!isMusicEnabled()) return;
   try {
+    triggerVibration([80, 50, 80]);
     const ctx = getAudioContext();
     const now = ctx.currentTime;
 
@@ -154,7 +171,9 @@ export function playCrashSound() {
  * and consecutive decaying table bounces for high physical realism.
  */
 export function playDiceRollSound() {
+  if (!isMusicEnabled()) return;
   try {
+    triggerVibration(40);
     const ctx = getAudioContext();
     const now = ctx.currentTime;
 
@@ -254,7 +273,9 @@ export function playDiceRollSound() {
  * Plays a warm, harmonious xylophone/chime upward major arpeggio.
  */
 export function playVictorySound() {
+  if (!isMusicEnabled()) return;
   try {
+    triggerVibration([100, 50, 100, 50, 200]);
     const ctx = getAudioContext();
     const now = ctx.currentTime;
     

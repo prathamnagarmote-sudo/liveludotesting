@@ -1,0 +1,173 @@
+<svg width="600" height="600" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad_red" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e53935" />
+      <stop offset="100%" stop-color="#b71c1c" />
+    </linearGradient>
+    <linearGradient id="grad_green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#43a047" />
+      <stop offset="100%" stop-color="#1b5e20" />
+    </linearGradient>
+    <linearGradient id="grad_yellow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbc02d" />
+      <stop offset="100%" stop-color="#f57f17" />
+    </linearGradient>
+    <linearGradient id="grad_blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#1e40af" />
+    </linearGradient>
+    <linearGradient id="grad_white" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f8fafc" />
+    </linearGradient>
+    <linearGradient id="grad_gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbc02d" />
+      <stop offset="100%" stop-color="#f57f17" />
+    </linearGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#grad_white)" />
+  <rect x="240.0" y="0.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="280.0" y="0.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="320.0" y="0.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="240.0" y="40.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="280.0" y="40.0" width="40.0" height="40.0" fill="url(#grad_green)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="320.0" y="40.0" width="40.0" height="40.0" fill="url(#grad_green)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="240.0" y="80.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="280.0" y="80.0" width="40.0" height="40.0" fill="url(#grad_green)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="320.0" y="80.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="240.0" y="120.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="280.0" y="120.0" width="40.0" height="40.0" fill="url(#grad_green)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="320.0" y="120.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="240.0" y="160.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="280.0" y="160.0" width="40.0" height="40.0" fill="url(#grad_green)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="320.0" y="160.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="240.0" y="200.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="280.0" y="200.0" width="40.0" height="40.0" fill="url(#grad_green)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="320.0" y="200.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="0.0" y="240.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="40.0" y="240.0" width="40.0" height="40.0" fill="url(#grad_red)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="80.0" y="240.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="120.0" y="240.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="160.0" y="240.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="200.0" y="240.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="360.0" y="240.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="400.0" y="240.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="440.0" y="240.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="480.0" y="240.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="520.0" y="240.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="560.0" y="240.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="0.0" y="280.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="40.0" y="280.0" width="40.0" height="40.0" fill="url(#grad_red)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="80.0" y="280.0" width="40.0" height="40.0" fill="url(#grad_red)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="120.0" y="280.0" width="40.0" height="40.0" fill="url(#grad_red)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="160.0" y="280.0" width="40.0" height="40.0" fill="url(#grad_red)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="200.0" y="280.0" width="40.0" height="40.0" fill="url(#grad_red)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="360.0" y="280.0" width="40.0" height="40.0" fill="url(#grad_yellow)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="400.0" y="280.0" width="40.0" height="40.0" fill="url(#grad_yellow)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="440.0" y="280.0" width="40.0" height="40.0" fill="url(#grad_yellow)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="480.0" y="280.0" width="40.0" height="40.0" fill="url(#grad_yellow)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="520.0" y="280.0" width="40.0" height="40.0" fill="url(#grad_yellow)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="560.0" y="280.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="0.0" y="320.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="40.0" y="320.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="80.0" y="320.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="120.0" y="320.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="160.0" y="320.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="200.0" y="320.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="360.0" y="320.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="400.0" y="320.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="440.0" y="320.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="480.0" y="320.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="520.0" y="320.0" width="40.0" height="40.0" fill="url(#grad_yellow)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="560.0" y="320.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="240.0" y="360.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="280.0" y="360.0" width="40.0" height="40.0" fill="url(#grad_blue)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="320.0" y="360.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="240.0" y="400.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="280.0" y="400.0" width="40.0" height="40.0" fill="url(#grad_blue)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="320.0" y="400.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="240.0" y="440.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="280.0" y="440.0" width="40.0" height="40.0" fill="url(#grad_blue)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="320.0" y="440.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="240.0" y="480.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="280.0" y="480.0" width="40.0" height="40.0" fill="url(#grad_blue)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="320.0" y="480.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="240.0" y="520.0" width="40.0" height="40.0" fill="url(#grad_blue)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="280.0" y="520.0" width="40.0" height="40.0" fill="url(#grad_blue)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="320.0" y="520.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="240.0" y="560.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="280.0" y="560.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="320.0" y="560.0" width="40.0" height="40.0" fill="url(#grad_white)" stroke="#1e293b" stroke-width="1.5" />
+  <polygon points="100.0,326.0 103.5,335.1 113.3,335.7 105.7,341.9 108.2,351.3 100.0,346.0 91.8,351.3 94.3,341.9 86.7,335.7 96.5,335.1" fill="url(#grad_gold)" stroke="#1e293b" stroke-width="1" stroke-linejoin="round" />
+  <polygon points="260.0,86.0 263.5,95.1 273.3,95.7 265.7,101.9 268.2,111.3 260.0,106.0 251.8,111.3 254.3,101.9 246.7,95.7 256.5,95.1" fill="url(#grad_gold)" stroke="#1e293b" stroke-width="1" stroke-linejoin="round" />
+  <polygon points="500.0,246.0 503.5,255.1 513.3,255.7 505.7,261.9 508.2,271.3 500.0,266.0 491.8,271.3 494.3,261.9 486.7,255.7 496.5,255.1" fill="url(#grad_gold)" stroke="#1e293b" stroke-width="1" stroke-linejoin="round" />
+  <polygon points="340.0,486.0 343.5,495.1 353.3,495.7 345.7,501.9 348.2,511.3 340.0,506.0 331.8,511.3 334.3,501.9 326.7,495.7 336.5,495.1" fill="url(#grad_gold)" stroke="#1e293b" stroke-width="1" stroke-linejoin="round" />
+  <rect x="0.0" y="0.0" width="240.0" height="240.0" fill="url(#grad_red)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="42.0" y="43.0" width="160.0" height="160.0" rx="16.0" ry="16.0" fill="#000000" opacity="0.08" />
+  <rect x="40.0" y="40.0" width="160.0" height="160.0" rx="16.0" ry="16.0" fill="url(#grad_white)" stroke="#cbd5e1" stroke-width="1.5" />
+  <circle cx="80.0" cy="81.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="80.0" cy="80.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="80.0" cy="80.0" r="16.0" fill="none" stroke="url(#grad_red)" stroke-width="2.5" />
+  <circle cx="80.0" cy="161.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="80.0" cy="160.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="80.0" cy="160.0" r="16.0" fill="none" stroke="url(#grad_red)" stroke-width="2.5" />
+  <circle cx="160.0" cy="81.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="160.0" cy="80.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="160.0" cy="80.0" r="16.0" fill="none" stroke="url(#grad_red)" stroke-width="2.5" />
+  <circle cx="160.0" cy="161.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="160.0" cy="160.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="160.0" cy="160.0" r="16.0" fill="none" stroke="url(#grad_red)" stroke-width="2.5" />
+  <rect x="360.0" y="0.0" width="240.0" height="240.0" fill="url(#grad_green)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="402.0" y="43.0" width="160.0" height="160.0" rx="16.0" ry="16.0" fill="#000000" opacity="0.08" />
+  <rect x="400.0" y="40.0" width="160.0" height="160.0" rx="16.0" ry="16.0" fill="url(#grad_white)" stroke="#cbd5e1" stroke-width="1.5" />
+  <circle cx="440.0" cy="81.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="440.0" cy="80.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="440.0" cy="80.0" r="16.0" fill="none" stroke="url(#grad_green)" stroke-width="2.5" />
+  <circle cx="440.0" cy="161.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="440.0" cy="160.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="440.0" cy="160.0" r="16.0" fill="none" stroke="url(#grad_green)" stroke-width="2.5" />
+  <circle cx="520.0" cy="81.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="520.0" cy="80.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="520.0" cy="80.0" r="16.0" fill="none" stroke="url(#grad_green)" stroke-width="2.5" />
+  <circle cx="520.0" cy="161.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="520.0" cy="160.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="520.0" cy="160.0" r="16.0" fill="none" stroke="url(#grad_green)" stroke-width="2.5" />
+  <rect x="360.0" y="360.0" width="240.0" height="240.0" fill="url(#grad_yellow)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="402.0" y="403.0" width="160.0" height="160.0" rx="16.0" ry="16.0" fill="#000000" opacity="0.08" />
+  <rect x="400.0" y="400.0" width="160.0" height="160.0" rx="16.0" ry="16.0" fill="url(#grad_white)" stroke="#cbd5e1" stroke-width="1.5" />
+  <circle cx="440.0" cy="441.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="440.0" cy="440.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="440.0" cy="440.0" r="16.0" fill="none" stroke="url(#grad_yellow)" stroke-width="2.5" />
+  <circle cx="440.0" cy="521.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="440.0" cy="520.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="440.0" cy="520.0" r="16.0" fill="none" stroke="url(#grad_yellow)" stroke-width="2.5" />
+  <circle cx="520.0" cy="441.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="520.0" cy="440.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="520.0" cy="440.0" r="16.0" fill="none" stroke="url(#grad_yellow)" stroke-width="2.5" />
+  <circle cx="520.0" cy="521.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="520.0" cy="520.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="520.0" cy="520.0" r="16.0" fill="none" stroke="url(#grad_yellow)" stroke-width="2.5" />
+  <rect x="0.0" y="360.0" width="240.0" height="240.0" fill="url(#grad_blue)" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="42.0" y="403.0" width="160.0" height="160.0" rx="16.0" ry="16.0" fill="#000000" opacity="0.08" />
+  <rect x="40.0" y="400.0" width="160.0" height="160.0" rx="16.0" ry="16.0" fill="url(#grad_white)" stroke="#cbd5e1" stroke-width="1.5" />
+  <circle cx="80.0" cy="441.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="80.0" cy="440.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="80.0" cy="440.0" r="16.0" fill="none" stroke="url(#grad_blue)" stroke-width="2.5" />
+  <circle cx="80.0" cy="521.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="80.0" cy="520.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="80.0" cy="520.0" r="16.0" fill="none" stroke="url(#grad_blue)" stroke-width="2.5" />
+  <circle cx="160.0" cy="441.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="160.0" cy="440.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="160.0" cy="440.0" r="16.0" fill="none" stroke="url(#grad_blue)" stroke-width="2.5" />
+  <circle cx="160.0" cy="521.5" r="22.0" fill="#000000" opacity="0.05" />
+  <circle cx="160.0" cy="520.0" r="22.0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="160.0" cy="520.0" r="16.0" fill="none" stroke="url(#grad_blue)" stroke-width="2.5" />
+  <polygon points="240.0,240.0 240.0,360.0 300.0,300.0" fill="url(#grad_red)" stroke="#1e293b" stroke-width="1.5" />
+  <polygon points="240.0,240.0 360.0,240.0 300.0,300.0" fill="url(#grad_green)" stroke="#1e293b" stroke-width="1.5" />
+  <polygon points="360.0,240.0 360.0,360.0 300.0,300.0" fill="url(#grad_yellow)" stroke="#1e293b" stroke-width="1.5" />
+  <polygon points="240.0,360.0 360.0,360.0 300.0,300.0" fill="url(#grad_blue)" stroke="#1e293b" stroke-width="1.5" />
+  <line x1="240.0" y1="240.0" x2="360.0" y2="360.0" stroke="#1e293b" stroke-width="1.5" />
+  <line x1="240.0" y1="360.0" x2="360.0" y2="240.0" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="240.0" y="240.0" width="120.0" height="120.0" fill="none" stroke="#1e293b" stroke-width="1.5" />
+  <rect x="0.75" y="0.75" width="598.5" height="598.5" fill="none" stroke="#1e293b" stroke-width="1.5" />
+</svg>

@@ -29,6 +29,7 @@ import { addToGameInactiveTime, setGameStartTime, setMatchDuration } from '../..
 import { useGameTimer } from '../../../../hooks/useGameTimer';
 import ScoreBoard from '../ScoreBoard/ScoreBoard';
 import styles from './Game.module.css';
+import menuIcon from '../../../../assets/menu.svg';
 import { getNakamaSocket } from '../../../../services/nakama';
 import { toast } from 'react-toastify';
 import { selectBestTokenForBot } from '../../../../game/bot/selectBestTokenForBot';
@@ -92,6 +93,30 @@ function Game({
   const [isMatchJoined, setIsMatchJoined] = useState(!isOnline);
   const [localSessionId, setLocalSessionId] = useState<string>('');
   const matchJoinedRef = useRef(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [music, setMusic] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem('musicEnabled') !== 'false';
+  });
+  const [vibration, setVibration] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem('vibrationEnabled') !== 'false';
+  });
+
+  const toggleMusic = () => {
+    const nextVal = !music;
+    setMusic(nextVal);
+    localStorage.setItem('musicEnabled', String(nextVal));
+  };
+
+  const toggleVibration = () => {
+    const nextVal = !vibration;
+    setVibration(nextVal);
+    localStorage.setItem('vibrationEnabled', String(nextVal));
+    if (nextVal && typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+  };
 
   const colorMap = useMemo(() => {
     return {
@@ -127,6 +152,7 @@ function Game({
           name: initData[i].name,
           colour,
           isBot: initData[i].isBot,
+          avatarUrl: initData[i].avatarUrl,
         })
       );
       dispatch(registerDice(colour));
@@ -447,16 +473,64 @@ function Game({
           } as React.CSSProperties
         }
       >
-        <ScoreBoard />
-        <Board onDiceClick={handleDiceRoll} />
+        <div className={styles.boardWrapper}>
+          <ScoreBoard />
+          <Board onDiceClick={handleDiceRoll} />
+        </div>
         <button
           type="button"
-          aria-label="Exit button"
-          className={styles.exitBtn}
-          onClick={handleExitBtnClick}
+          aria-label="Menu button"
+          className={styles.menuBtn}
+          onClick={() => setIsMenuOpen(true)}
         >
-          &times;
+          <img src={menuIcon} alt="Menu" className={styles.menuIconImg} />
         </button>
+        {isMenuOpen && (
+          <div className={styles.menuOverlay} onClick={() => setIsMenuOpen(false)}>
+            <div className={styles.menuModal} onClick={(e) => e.stopPropagation()}>
+              <h2 className={styles.menuTitle}>Game Menu</h2>
+              
+              <div className={styles.menuSettings}>
+                <div className={styles.settingItem}>
+                  <span className={styles.settingLabel}>Music & Sound</span>
+                  <label className={styles.switch}>
+                    <input type="checkbox" checked={music} onChange={toggleMusic} />
+                    <span className={styles.slider} />
+                  </label>
+                </div>
+                
+                <div className={styles.settingItem}>
+                  <span className={styles.settingLabel}>Vibration</span>
+                  <label className={styles.switch}>
+                    <input type="checkbox" checked={vibration} onChange={toggleVibration} />
+                    <span className={styles.slider} />
+                  </label>
+                </div>
+              </div>
+
+              <div className={styles.menuActions}>
+                <button
+                  type="button"
+                  className={styles.resumeBtn}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Resume Game
+                </button>
+                <button
+                  type="button"
+                  className={styles.quitBtn}
+                  onClick={() => {
+                    if (window.confirm(EXIT_MESSAGE)) {
+                      handleExitBtnClick();
+                    }
+                  }}
+                >
+                  Quit Game
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {isGameEnded && <GameFinishedScreen players={players} />}
       </div>
     </OnlineGameContext.Provider>

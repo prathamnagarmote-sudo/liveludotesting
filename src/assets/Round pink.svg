@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24">
+  <defs>
+    <radialGradient id="radial-gradient" cx="2399.63" cy="-888.5" fx="2399.63" fy="-888.5" r="28.53" gradientTransform="translate(-863.83 -2392.07) rotate(90)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffff03"/>
+      <stop offset=".18" stop-color="#fff407"/>
+      <stop offset=".5" stop-color="#ffd814"/>
+      <stop offset=".91" stop-color="#ffaa29"/>
+      <stop offset="1" stop-color="#ffa02e"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-2" cx="2525.6" cy="-888.23" fx="2525.6" fy="-888.23" r="29.37" gradientTransform="translate(-863.83 -2427.35) rotate(90) scale(.96 1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff39af"/>
+      <stop offset=".86" stop-color="#a50875"/>
+      <stop offset="1" stop-color="#96006c"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-3" cx="2402" cy="-884.4" fx="2402" fy="-884.4" r="18.67" gradientTransform="translate(-863.83 -2392.07) rotate(90)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff39af"/>
+      <stop offset="1" stop-color="#ed1476"/>
+    </radialGradient>
+  </defs>
+  <path d="m23.69,12C23.69,5.57,18.37.36,11.95.36S.2,5.25.31,12c.11,6.75,5.21,11.63,11.64,11.63s11.74-5.21,11.74-11.63h0Z" fill="url(#radial-gradient)" fill-rule="evenodd" stroke-width="0"/>
+  <path d="m22.81,12c0-5.93-4.92-10.73-10.86-10.73S1.09,5.77,1.19,12c.1,6.22,4.82,10.73,10.76,10.73s10.86-4.8,10.86-10.73h0Z" fill="url(#radial-gradient-2)" fill-rule="evenodd" stroke-width="0"/>
+  <path d="m22.81,12c0-5.7-4.6-10.33-10.15-10.33S2.51,6.01,2.61,12c.09,5.99,4.5,10.33,10.05,10.33s10.15-4.62,10.15-10.33h0Z" fill="url(#radial-gradient-3)" fill-rule="evenodd" stroke-width="0"/>
+  <path d="m15.24,1.94c-3.63-1.46-5.19-.11-4.69,3.87.59,4.67,3.01,10.27,5.98,12.95.56.5,1.46.67,2.19.52.84-.18,1.61-.75,2.14-1.43,1.67-2.15,1.94-5.17,1.59-7.79-.53-3.93-3.7-6.71-7.22-8.12h0Z" fill="#96006c" fill-rule="evenodd" opacity=".5" stroke-width="0"/>
+  <path d="m18.79,4.74c-2.41-1.96-4.27-1.26-3.09,2.04.95,2.66,1.74,4.65,3.41,6.88,1.08,1.44,2.79.62,2.76-2.28-.02-2.12-1.38-5.26-3.08-6.64h0Z" fill="#fbb8ff" fill-rule="evenodd" opacity=".75" stroke-width="0"/>
+  <path d="m3.08,14.02c.44,2.22,1.64,4.89,3.98,6.45.76.51,2.3.71,1.22-.46-2.19-2.36-2.93-3.64-3.97-6.66-.66-1.93-.75-2.79-1.04-2.8-.37-.02-.6,1.44-.2,3.47h0Z" fill="#fbb8ff" fill-rule="evenodd" opacity=".75" stroke-width="0"/>
+</svg>

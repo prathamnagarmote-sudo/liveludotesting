@@ -3,7 +3,7 @@ import Token from '../Token/Token';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../../../state/store';
 import { useCallback, useState, useContext } from 'react';
-import { NUMBER_OF_BLOCKS_IN_ONE_ROW, resizeBoard } from '../../../../state/slices/boardSlice';
+import { resizeBoard } from '../../../../state/slices/boardSlice';
 import { ERRORS } from '../../../../utils/errors';
 import Dice from '../Dice/Dice';
 import type { TCoordinate, TPlayerColour } from '../../../../types';
@@ -19,7 +19,7 @@ type Props = {
 
 function Board({ onDiceClick: onDiceRoll }: Props) {
   const { players, currentPlayerColour } = useSelector((state: RootState) => state.players);
-  const { boardTileSize, boardSideLength } = useSelector((state: RootState) => state.board);
+  const { boardSideLength } = useSelector((state: RootState) => state.board);
   const { dice } = useSelector((state: RootState) => state.dice);
   const [tokenClickData, setTokenClickData] = useState<TTokenClickData | null>(null);
   const [boardNode, setBoardNode] = useState<HTMLDivElement | null>(null);
@@ -43,14 +43,23 @@ function Board({ onDiceClick: onDiceRoll }: Props) {
     const { top, left } = boardNode.getBoundingClientRect();
     const boardX = e.clientX - left;
     const boardY = e.clientY - top;
-    const tileStartCoords = Array(NUMBER_OF_BLOCKS_IN_ONE_ROW)
-      .fill(null)
-      .map((_, i) => (i + 1) * boardTileSize);
 
     if (boardX > boardSideLength || boardY > boardSideLength || boardX < 0 || boardY < 0) return;
 
-    const coordX = tileStartCoords.findIndex((v) => boardX < v);
-    const coordY = tileStartCoords.findIndex((v) => boardY < v);
+    const visualTileSize = 0.05883748 * boardSideLength;
+    const visualX = Math.max(0, Math.min(16, Math.floor(boardX / visualTileSize)));
+    const visualY = Math.max(0, Math.min(16, Math.floor(boardY / visualTileSize)));
+
+    const visualToLogical = (v: number): number => {
+      if (v <= 5) return v;
+      if (v === 6) return 5;
+      if (v <= 9) return v - 1;
+      if (v === 10) return 8;
+      return v - 2;
+    };
+
+    const coordX = visualToLogical(visualX);
+    const coordY = visualToLogical(visualY);
 
     const coords: TCoordinate = { x: coordX, y: coordY };
 
@@ -72,11 +81,28 @@ function Board({ onDiceClick: onDiceRoll }: Props) {
 
   return (
     <div className={styles.board} ref={setBoardNode} onClick={handleBoardClick}>
+      <svg style={{ width: 0, height: 0, position: 'absolute', pointerEvents: 'none', opacity: 0 }}>
+        <defs>
+          <linearGradient id="token-grad-blue" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#003b73" />
+            <stop offset="100%" stopColor="#00a2e8" />
+          </linearGradient>
+          <linearGradient id="token-grad-red" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#800a00" />
+            <stop offset="100%" stopColor="#f24b3f" />
+          </linearGradient>
+          <linearGradient id="token-grad-green" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#034d19" />
+            <stop offset="100%" stopColor="#24d658" />
+          </linearGradient>
+          <linearGradient id="token-grad-yellow" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#996000" />
+            <stop offset="100%" stopColor="#ffb700" />
+          </linearGradient>
+        </defs>
+      </svg>
       <img src={boardSvg} className={styles.boardImage} aria-hidden="true" />
-      <div className={`${styles.paddockGlow} ${styles.red} ${currentPlayerColour === 'red' ? styles.active : ''} ${isOnline && myPlayerColour === 'red' ? styles.local : ''}`} />
-      <div className={`${styles.paddockGlow} ${styles.green} ${currentPlayerColour === 'green' ? styles.active : ''} ${isOnline && myPlayerColour === 'green' ? styles.local : ''}`} />
-      <div className={`${styles.paddockGlow} ${styles.yellow} ${currentPlayerColour === 'yellow' ? styles.active : ''} ${isOnline && myPlayerColour === 'yellow' ? styles.local : ''}`} />
-      <div className={`${styles.paddockGlow} ${styles.blue} ${currentPlayerColour === 'blue' ? styles.active : ''} ${isOnline && myPlayerColour === 'blue' ? styles.local : ''}`} />
+
       {players.map((p) =>
         p.tokens.map((t) => (
           <Token
