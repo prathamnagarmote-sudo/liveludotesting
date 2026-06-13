@@ -19,6 +19,10 @@ if (import.meta.env.PROD) {
   }
 }
 
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled Promise Rejection Details:', event.reason);
+});
+
 console.log(
   `%c LOOSER LUDO v${__LIBRELUDO_VERSION__} `,
   'background: #4caf50; color: #fff; padding: 5px 10px; border-radius: 3px 0 0 3px; font-weight: bold;'
