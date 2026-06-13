@@ -320,7 +320,6 @@ function Game({
         setTimeout(() => {
           dispatch(setIsAnyTokenMoving(false));
 
-          const pSeq = store.getState().players.playerSequence;
           const activePlayer = store.getState().players.players.find(p => p.colour === localColor);
           const isBot = activePlayer?.isBot;
           const isHost = playersList.some(p => p.id === effectivePlayerId && !p.isBot);
