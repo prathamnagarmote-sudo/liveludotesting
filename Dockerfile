@@ -14,7 +14,7 @@ COPY nakama/tsconfig.json nakama/rollup.config.js nakama/*.ts ./
 RUN pnpm run build
 
 # Run Nakama
-FROM heroiclabs/nakama:latest
+FROM heroiclabs/nakama:3.21.1
 
 COPY --from=node-builder /app/nakama/build/index.js /nakama/data/modules/
 
