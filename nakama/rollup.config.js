@@ -6,8 +6,9 @@ export default {
   input: './main.ts',
   output: {
     file: 'build/index.js',
-    format: 'cjs',
-    name: 'nakama_module'
+    format: 'iife',
+    name: 'InitModule',
+    exports: 'default'
   },
   plugins: [
     resolve(),

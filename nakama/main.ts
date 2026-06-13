@@ -83,4 +83,4 @@ const InitModule: nkruntime.InitModule = function(ctx: nkruntime.Context, logger
   initializer.registerMatchmakerMatched(matchmakerMatched);
 };
 
-export { InitModule };
+export default InitModule;
