@@ -6,26 +6,42 @@ function matchInit(
   nk: nkruntime.Nakama,
   params: {[key: string]: string}
 ): {state: nkruntime.MatchState, tickRate: number, label: string} {
-  logger.info("Match Init with params: %v", params);
-  
-  const players = JSON.parse(params.players || '[]');
-  
-  const state: any = {
-    roomId: ctx.matchId,
-    players: players,
-    currentTurnIndex: 0,
-    diceValue: null,
-    status: 'playing',
-    emptyTicks: 0,
-    tickCount: 0,
-    botTakeoverTicks: {} as {[userId: string]: number}
-  };
+  try {
+    logger.info("Match Init with params: %v", params);
+    
+    const players = JSON.parse(params.players || '[]');
+    
+    const state: any = {
+      roomId: ctx.matchId,
+      players: players,
+      currentTurnIndex: 0,
+      diceValue: null,
+      status: 'playing',
+      emptyTicks: 0,
+      tickCount: 0,
+      botTakeoverTicks: {} as {[userId: string]: number}
+    };
 
-  return {
-    state,
-    tickRate: 10,
-    label: ""
-  };
+    return {
+      state,
+      tickRate: 10,
+      label: ""
+    };
+  } catch (e: any) {
+    const errMsg = e?.message || e?.error || String(e);
+    logger.error("Error in matchInit: %v", errMsg);
+    try {
+      nk.storageWrite([{
+        collection: "debug",
+        key: "matchinit_error",
+        userId: "00000000-0000-0000-0000-000000000000",
+        value: { error: errMsg, timestamp: Date.now() },
+        permissionRead: 2,
+        permissionWrite: 0
+      }]);
+    } catch (writeErr) {}
+    throw e;
+  }
 }
 
 function matchJoinAttempt(
