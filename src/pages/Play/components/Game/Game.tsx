@@ -16,7 +16,7 @@ import { type TPlayerColour } from '../../../../types';
 import Board from '../Board/Board';
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import type { AppDispatch, RootState } from '../../../../state/store';
-import { registerDice, setDiceNumberDirect, setIsPlaceholderShowing } from '../../../../state/slices/diceSlice';
+import { registerDice, setDiceNumberDirect, setIsPlaceholderShowing, setIsVisualRolling } from '../../../../state/slices/diceSlice';
 import { handlePostDiceRollThunk } from '../../../../state/thunks/handlePostDiceRollThunk';
 import GameFinishedScreen from '../GameFinishedScreen/GameFinishedScreen';
 import { changeTurnThunk } from '../../../../state/thunks/changeTurnThunk';
@@ -242,9 +242,13 @@ function Game({
 
       dispatch(setDiceNumberDirect({ colour: localColor, diceNumber: data.roll }));
       dispatch(setIsPlaceholderShowing({ colour: localColor, isPlaceholderShowing: true }));
+      dispatch(setIsVisualRolling({ colour: localColor, isVisualRolling: true }));
 
       setTimeout(() => {
         dispatch(setIsPlaceholderShowing({ colour: localColor, isPlaceholderShowing: false }));
+        setTimeout(() => {
+          dispatch(setIsVisualRolling({ colour: localColor, isVisualRolling: false }));
+        }, 700);
 
         if (data.roll === 6) {
           dispatch(incrementNumberOfConsecutiveSix(localColor));

@@ -1,6 +1,5 @@
 .board {
   position: relative;
-  --board-side-length: min(94vw, 56vh);
   --player-name-spacing: calc(var(--board-tile-size) * 0.25);
   height: var(--board-side-length);
   width: var(--board-side-length);

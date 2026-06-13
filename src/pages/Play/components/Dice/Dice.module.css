@@ -224,7 +224,7 @@
 .playerName {
   color: #ffffff;
   font-weight: 800;
-  font-size: calc(var(--board-tile-size) * 0.38);
+  font-size: max(10px, calc(var(--board-tile-size) * 0.38));
   font-family: 'Outfit', 'Inter', sans-serif;
   letter-spacing: 0.3px;
   text-transform: capitalize;
@@ -238,7 +238,7 @@
 .playerScore {
   color: #ffffff;
   font-weight: 900;
-  font-size: calc(var(--board-tile-size) * 0.65);
+  font-size: max(14px, calc(var(--board-tile-size) * 0.65));
   font-family: 'Outfit', 'Inter', sans-serif;
   letter-spacing: 0.5px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);

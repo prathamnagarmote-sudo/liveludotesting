@@ -23,7 +23,7 @@ export function useTurnTimer(
   const dispatch = useDispatch<any>();
   const store = useStore<RootState>();
   const onlineContext = useContext(OnlineGameContext);
-  const { currentPlayerColour, isGameEnded, players } = useSelector(
+  const { currentPlayerColour, isGameEnded, players, isAnyTokenMoving } = useSelector(
     (state: RootState) => state.players
   );
   const moveAndCapture = useMoveAndCaptureToken();
@@ -41,7 +41,7 @@ export function useTurnTimer(
   const player = players.find((p) => p.colour === colour);
   const isBot = player?.isBot;
   const isCurrentPlayer = currentPlayerColour === colour;
-  const shouldRunTimer = isCurrentPlayer && !isGameEnded && !isBot;
+  const shouldRunTimer = isCurrentPlayer && !isGameEnded && !isBot && !isAnyTokenMoving;
 
   // Track the transition of isDiceRollAllowed from false to true to reset the timer
   useEffect(() => {
@@ -50,7 +50,7 @@ export function useTurnTimer(
         startTimeRef.current = undefined;
         // Reset path attributes immediately in DOM
         if (pathRef.current) {
-          pathRef.current.setAttribute('stroke-dashoffset', '337.792');
+          pathRef.current.setAttribute('stroke-dashoffset', '0');
           pathRef.current.setAttribute('stroke', '#32cd32');
         }
         setPhase(1);
@@ -66,7 +66,7 @@ export function useTurnTimer(
     if (!shouldRunTimer) {
       if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current);
       startTimeRef.current = undefined;
-      // Revert to initial full green (0% visible length) when timer stops/resets
+      // Revert to initial hidden (337.792 offset) when timer stops/resets
       if (pathRef.current) {
         pathRef.current.setAttribute('stroke-dashoffset', '337.792');
         pathRef.current.setAttribute('stroke', '#32cd32');
@@ -86,7 +86,7 @@ export function useTurnTimer(
       // Direct DOM manipulation of the SVG path for ultra-smooth rendering
       if (pathRef.current) {
         const pct = MathRemaining / TOTAL_TURN_TIME_MS;
-        const offset = 337.792 * pct;
+        const offset = 337.792 * (1 - pct);
         pathRef.current.setAttribute('stroke-dashoffset', offset.toString());
 
         let color = '#32cd32'; // Green

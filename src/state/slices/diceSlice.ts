@@ -32,6 +32,7 @@ const reducers = {
       colour: action.payload,
       diceNumber: 1,
       isPlaceholderShowing: false,
+      isVisualRolling: false,
     });
     state.rollBag[action.payload] = generateRollBag();
   },
@@ -41,6 +42,13 @@ const reducers = {
   ) => {
     const dice = getDice(state, action.payload.colour);
     dice.isPlaceholderShowing = action.payload.isPlaceholderShowing;
+  },
+  setIsVisualRolling: (
+    state: TDiceState,
+    action: PayloadAction<{ colour: TPlayerColour; isVisualRolling: boolean }>
+  ) => {
+    const dice = getDice(state, action.payload.colour);
+    dice.isVisualRolling = action.payload.isVisualRolling;
   },
   setDiceNumber: (
     state: TDiceState,
@@ -75,6 +83,7 @@ export const {
   registerDice,
   setDiceNumber,
   setIsPlaceholderShowing,
+  setIsVisualRolling,
   renewRollBag,
   setDiceNumberDirect,
   clearDiceState,

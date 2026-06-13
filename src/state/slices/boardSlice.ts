@@ -21,9 +21,9 @@ const reducers = {
   resizeBoard: (state: TBoardState, action: PayloadAction<number>) => {
     state.boardSideLength = action.payload;
     state.boardTileSize = action.payload / NUMBER_OF_BLOCKS_IN_ONE_ROW;
-    state.tokenHeight = (action.payload / NUMBER_OF_BLOCKS_IN_ONE_ROW) * 1.38;
+    state.tokenHeight = (action.payload / NUMBER_OF_BLOCKS_IN_ONE_ROW) * 1.2;
     state.tokenWidth =
-      (action.payload / NUMBER_OF_BLOCKS_IN_ONE_ROW) * 1.38 * TOKEN_WIDTH_HEIGHT_RATIO;
+      (action.payload / NUMBER_OF_BLOCKS_IN_ONE_ROW) * 1.2 * TOKEN_WIDTH_HEIGHT_RATIO;
   },
   clearBoardState: () => initialState,
 };

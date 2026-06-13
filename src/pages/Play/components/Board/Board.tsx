@@ -19,7 +19,7 @@ type Props = {
 
 function Board({ onDiceClick: onDiceRoll }: Props) {
   const { players, currentPlayerColour } = useSelector((state: RootState) => state.players);
-  const { boardSideLength } = useSelector((state: RootState) => state.board);
+  const { boardSideLength, boardTileSize } = useSelector((state: RootState) => state.board);
   const { dice } = useSelector((state: RootState) => state.dice);
   const [tokenClickData, setTokenClickData] = useState<TTokenClickData | null>(null);
   const [boardNode, setBoardNode] = useState<HTMLDivElement | null>(null);
@@ -46,20 +46,8 @@ function Board({ onDiceClick: onDiceRoll }: Props) {
 
     if (boardX > boardSideLength || boardY > boardSideLength || boardX < 0 || boardY < 0) return;
 
-    const visualTileSize = 0.05883748 * boardSideLength;
-    const visualX = Math.max(0, Math.min(16, Math.floor(boardX / visualTileSize)));
-    const visualY = Math.max(0, Math.min(16, Math.floor(boardY / visualTileSize)));
-
-    const visualToLogical = (v: number): number => {
-      if (v <= 5) return v;
-      if (v === 6) return 5;
-      if (v <= 9) return v - 1;
-      if (v === 10) return 8;
-      return v - 2;
-    };
-
-    const coordX = visualToLogical(visualX);
-    const coordY = visualToLogical(visualY);
+    const coordX = Math.max(0, Math.min(14, Math.floor(boardX / boardTileSize)));
+    const coordY = Math.max(0, Math.min(14, Math.floor(boardY / boardTileSize)));
 
     const coords: TCoordinate = { x: coordX, y: coordY };
 

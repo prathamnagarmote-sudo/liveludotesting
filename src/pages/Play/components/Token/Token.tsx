@@ -47,7 +47,7 @@ function Token({ colour, id, tokenClickData }: Props) {
 
   const { scaleFactor } = tokenAlignmentData;
   const getPosition = useCoordsToPosition();
-  const { x, y } = getPosition(coordinates, tokenAlignmentData, isLocked);
+  const { x, y } = getPosition(coordinates, tokenAlignmentData);
   const diceNumber = useSelector((state: RootState) =>
     state.dice.dice.find((d) => d.colour === colour)
   )?.diceNumber;

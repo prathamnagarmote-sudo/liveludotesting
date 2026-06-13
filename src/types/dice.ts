@@ -4,4 +4,5 @@ export type TDice = {
   colour: TPlayerColour;
   diceNumber: number;
   isPlaceholderShowing: boolean;
+  isVisualRolling?: boolean;
 };

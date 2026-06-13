@@ -46,12 +46,18 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
   const { diceNumber, isPlaceholderShowing } =
     useSelector((state: RootState) => state.dice.dice.find((d) => d.colour === colour)) ?? {};
 
+  // Find if any player's dice is currently rolling
+  const rollingPlayer = useSelector((state: RootState) =>
+    state.dice.dice.find((d) => d.isVisualRolling)?.colour
+  );
+
   const anyTokenActive = useMemo(
     () => isAnyTokenActiveOfColour(colour, players),
     [colour, players]
   );
   const isBot = players.find((p) => p.colour === colour)?.isBot;
   const isCurrentPlayer = currentPlayer === colour;
+  const isVisualCurrentPlayer = (rollingPlayer || currentPlayer) === colour;
   const isMyTurn = onlineContext?.isOnline ? colour === onlineContext.myPlayerColour : true;
   const isDiceDisabled =
     !isCurrentPlayer ||
@@ -124,7 +130,7 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
       >
         {/* Background white border track */}
         <path
-          d="M 50 2.25 L 28 2.25 A 25.75 25.75 0 0 0 2.25 28 L 2.25 72 A 25.75 25.75 0 0 0 28 97.75 L 72 97.75 A 25.75 25.75 0 0 0 97.75 72 L 97.75 28 A 25.75 25.75 0 0 0 72 2.25 Z"
+          d="M 50 2.25 L 72 2.25 A 25.75 25.75 0 0 1 97.75 28 L 97.75 72 A 25.75 25.75 0 0 1 72 97.75 L 28 97.75 A 25.75 25.75 0 0 1 2.25 72 L 2.25 28 A 25.75 25.75 0 0 1 28 2.25 Z"
           fill="none"
           stroke="#ffffff"
           strokeWidth={shouldShowTimer ? "7.5" : "4.5"}
@@ -134,13 +140,13 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
         {shouldShowTimer && (
           <path
             ref={timerPathRef}
-            d="M 50 2.25 L 28 2.25 A 25.75 25.75 0 0 0 2.25 28 L 2.25 72 A 25.75 25.75 0 0 0 28 97.75 L 72 97.75 A 25.75 25.75 0 0 0 97.75 72 L 97.75 28 A 25.75 25.75 0 0 0 72 2.25 Z"
+            d="M 50 2.25 L 72 2.25 A 25.75 25.75 0 0 1 97.75 28 L 97.75 72 A 25.75 25.75 0 0 1 72 97.75 L 28 97.75 A 25.75 25.75 0 0 1 2.25 72 L 2.25 28 A 25.75 25.75 0 0 1 28 2.25 Z"
             fill="none"
             stroke={timerColor}
             strokeWidth="7.5"
             strokeLinecap="round"
             strokeDasharray="337.792"
-            strokeDashoffset="337.792"
+            strokeDashoffset="0"
             style={{ transition: 'stroke 0.3s ease' }}
           />
         )}
@@ -169,7 +175,7 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
   );
 
   const diceContent = (
-    <div className={clsx(styles.diceFrameContainer, styles[colour], { [styles.activeFrame]: isCurrentPlayer })}>
+    <div className={clsx(styles.diceFrameContainer, styles[colour], { [styles.activeFrame]: isVisualCurrentPlayer })}>
       <div className={styles.diceWrapper}>
         <button
           className={clsx(styles.dice, {

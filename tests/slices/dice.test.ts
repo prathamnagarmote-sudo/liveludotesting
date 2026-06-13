@@ -21,6 +21,7 @@ describe('Test dice slice reducers', () => {
         colour: 'blue',
         diceNumber: 1,
         isPlaceholderShowing: false,
+        isVisualRolling: false,
       } as TDice);
     });
   });
@@ -57,8 +58,8 @@ describe('Test dice slice reducers', () => {
     it('should clear dice state', () => {
       const initState: TDiceState = {
         dice: [
-          { colour: 'blue', diceNumber: 1, isPlaceholderShowing: false },
-          { colour: 'green', diceNumber: 1, isPlaceholderShowing: false },
+          { colour: 'blue', diceNumber: 1, isPlaceholderShowing: false, isVisualRolling: false },
+          { colour: 'green', diceNumber: 1, isPlaceholderShowing: false, isVisualRolling: false },
         ],
         rollBag: {
           blue: [1, 2, 3, 4, 5],
@@ -78,8 +79,8 @@ describe('Test dice helpers', () => {
     it('should return the dice matching the specified player color', () => {
       const state: TDiceState = {
         dice: [
-          { colour: 'blue', diceNumber: 1, isPlaceholderShowing: false },
-          { colour: 'green', diceNumber: 1, isPlaceholderShowing: false },
+          { colour: 'blue', diceNumber: 1, isPlaceholderShowing: false, isVisualRolling: false },
+          { colour: 'green', diceNumber: 1, isPlaceholderShowing: false, isVisualRolling: false },
         ],
         rollBag: { blue: [], red: [], green: [], yellow: [] },
       };
@@ -89,8 +90,8 @@ describe('Test dice helpers', () => {
     it('should throw an error if no dice matches the specified player color', () => {
       const state: TDiceState = {
         dice: [
-          { colour: 'blue', diceNumber: 1, isPlaceholderShowing: false },
-          { colour: 'green', diceNumber: 1, isPlaceholderShowing: false },
+          { colour: 'blue', diceNumber: 1, isPlaceholderShowing: false, isVisualRolling: false },
+          { colour: 'green', diceNumber: 1, isPlaceholderShowing: false, isVisualRolling: false },
         ],
         rollBag: { blue: [], red: [], green: [], yellow: [] },
       };

@@ -14,11 +14,18 @@
 
 .boardWrapper {
   position: relative;
+  --board-side-length: min(94vw, 56vh);
   width: var(--board-side-length);
   height: var(--board-side-length);
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+@media (max-width: 768px) {
+  .boardWrapper {
+    --board-side-length: min(95vw, 61vh);
+  }
 }
 
 .menuBtn {
