@@ -184,13 +184,21 @@ function Game({
     dispatch(changeTurnThunk(moveAndCapture));
   }, [currentPlayerColour, dispatch, initData.length, moveAndCapture, players.length, isOnline]);
 
+  // Stable ref to always have the latest roomId without re-running the effect
+  const roomIdRef = useRef<string>('');
+  useEffect(() => { roomIdRef.current = roomId; }, [roomId]);
+
+  // Stable ref to always have the latest myPlayerColour without re-running the effect
+  const myPlayerColourRef = useRef<TPlayerColour>(canonicalColour || 'blue');
+  useEffect(() => { myPlayerColourRef.current = myPlayerColour; }, [myPlayerColour]);
+
   // Handle Online Match turn coordination
+  // NOTE: roomId and myPlayerColour are intentionally excluded from deps to avoid resetting
+  // the socket listener every time they change. Instead we use refs for latest values.
   useEffect(() => {
     if (!isOnline || (!matchedToken && !matchId)) return;
 
-    const effectivePlayerId = localSessionId || myPlayerId;
-
-    let socket;
+    let socket: ReturnType<typeof getNakamaSocket>;
     try {
       socket = getNakamaSocket();
     } catch(e) {
@@ -198,31 +206,7 @@ function Game({
       return;
     }
 
-    const joinMatch = async () => {
-      if (matchJoinedRef.current) return;
-      matchJoinedRef.current = true;
-      try {
-        console.log("Attempting to join match. matchId:", matchId, "matchedToken:", matchedToken);
-        let match;
-        if (matchedToken) {
-          console.log("Joining via matchmaking token:", matchedToken);
-          match = await socket.joinMatch(undefined, matchedToken);
-        } else if (matchId) {
-          console.log("Joining via matchId:", matchId);
-          match = await socket.joinMatch(matchId);
-        } else {
-          throw new Error("No match ID or matchmaking token provided.");
-        }
-        setRoomId(match.match_id);
-        if (match.self && match.self.session_id) {
-          setLocalSessionId(match.self.session_id);
-        }
-      } catch (e: any) {
-        matchJoinedRef.current = false;
-        toast.error("Error joining match: " + e.message);
-        navigate('/setup');
-      }
-    };
+    const getEffectivePlayerId = () => localSessionId || myPlayerId || '';
 
     const handleTurnUpdate = (data: { currentTurnIndex: number; currentPlayerId: string; currentPlayerColour: TPlayerColour }) => {
       const localColor = colorMap[data.currentPlayerColour] || data.currentPlayerColour;
@@ -232,12 +216,11 @@ function Game({
 
     const handleDiceRolled = (data: { playerId: string; playerUserId?: string; roll: number }) => {
       const state = store.getState();
-      const currentPlayers = state.players.players; // fresh state
+      const currentPlayers = state.players.players;
       const player = currentPlayers.find(p => p.id === data.playerId || (data.playerUserId && p.userId === data.playerUserId));
       
       const pColour = player ? player.colour : null;
       if (!pColour) return;
-
       const localColor = pColour;
 
       dispatch(setDiceNumberDirect({ colour: localColor, diceNumber: data.roll }));
@@ -261,23 +244,26 @@ function Game({
         const activePlayer = playersList.find(p => p.colour === localColor);
         if (!activePlayer) return;
 
-        const isHost = playersList.some(p => p.id === effectivePlayerId && !p.isBot); // simplified host check for bots
+        const effectivePlayerId = getEffectivePlayerId();
+        const isHost = playersList.some(p => p.id === effectivePlayerId && !p.isBot);
         const isBot = activePlayer.isBot;
+        const currentRoomId = roomIdRef.current;
+        const currentMyColour = myPlayerColourRef.current;
 
         if (activePlayer.numberOfConsecutiveSix === 3) {
           dispatch(resetNumberOfConsecutiveSix(localColor));
           dispatch(deactivateAllTokens(localColor));
-          if (localColor === myPlayerColour || (isBot && isHost)) {
+          if (localColor === currentMyColour || (isBot && isHost)) {
             setTimeout(() => {
               const pSeq = freshState.players.playerSequence;
               const nextColour = getNextTurnColour(localColor, pSeq);
-              socket.sendMatchState(roomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
+              socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
             }, 1500);
           }
           return;
         }
 
-        if (localColor === myPlayerColour) {
+        if (localColor === currentMyColour) {
           const movableTokens = activePlayer.tokens.filter(t =>
             isTokenMovable(t, data.roll) || (data.roll === 6 && t.isLocked && !t.hasTokenReachedHome)
           );
@@ -285,11 +271,11 @@ function Game({
             setTimeout(() => {
               const pSeq = freshState.players.playerSequence;
               const nextColour = getNextTurnColour(localColor, pSeq);
-              socket.sendMatchState(roomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
+              socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
             }, 1500);
           } else if (movableTokens.length === 1 && areAllTokensInSameCoord(movableTokens)) {
             const token = movableTokens[0];
-            socket.sendMatchState(roomId, 4, JSON.stringify({ tokenId: token.id, isUnlock: token.isLocked }));
+            socket.sendMatchState(currentRoomId, 4, JSON.stringify({ tokenId: token.id, isUnlock: token.isLocked }));
           } else {
             dispatch(activateTokens({ all: data.roll === 6, colour: localColor, diceNumber: data.roll }));
           }
@@ -301,11 +287,11 @@ function Game({
             setTimeout(() => {
               const pSeq = freshState.players.playerSequence;
               const nextColour = getNextTurnColour(localColor, pSeq);
-              socket.sendMatchState(roomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
+              socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
             }, 1500);
           } else {
             setTimeout(() => {
-              socket.sendMatchState(roomId, 4, JSON.stringify({ tokenId: bestToken.id, isUnlock: bestToken.isLocked }));
+              socket.sendMatchState(currentRoomId, 4, JSON.stringify({ tokenId: bestToken.id, isUnlock: bestToken.isLocked }));
             }, 1500);
           }
         }
@@ -322,6 +308,9 @@ function Game({
       if (!token) return;
 
       const diceNumber = state.dice.dice.find(d => d.colour === localColor)?.diceNumber || 1;
+      const effectivePlayerId = getEffectivePlayerId();
+      const currentRoomId = roomIdRef.current;
+      const currentMyColour = myPlayerColourRef.current;
 
       if (data.isUnlock) {
         dispatch(setIsAnyTokenMoving(true));
@@ -336,10 +325,9 @@ function Game({
           const isBot = activePlayer?.isBot;
           const isHost = playersList.some(p => p.id === effectivePlayerId && !p.isBot);
 
-          if (localColor === myPlayerColour || (isBot && isHost)) {
-            const getsAnotherTurn = true;
-            const nextColour = getsAnotherTurn ? localColor : getNextTurnColour(localColor, pSeq);
-            socket.sendMatchState(roomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
+          if (localColor === currentMyColour || (isBot && isHost)) {
+            const nextColour = localColor; // unlock always gives another turn
+            socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
           }
         }, FORWARD_TOKEN_TRANSITION_TIME);
       } else {
@@ -351,17 +339,17 @@ function Game({
         const isBot = activePlayer?.isBot;
         const isHost = playersList.some(p => p.id === effectivePlayerId && !p.isBot);
 
-        if (localColor === myPlayerColour || (isBot && isHost)) {
+        if (localColor === currentMyColour || (isBot && isHost)) {
           if (moveData) {
             const { hasTokenReachedHome, isCaptured, hasPlayerWon } = moveData;
             if (hasPlayerWon) return;
 
             const getsAnotherTurn = (diceNumber === 6 && activePlayer!.numberOfConsecutiveSix < 3) || isCaptured || hasTokenReachedHome;
             const nextColour = getsAnotherTurn ? localColor : getNextTurnColour(localColor, pSeq);
-            socket.sendMatchState(roomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
+            socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
           } else {
             const nextColour = getNextTurnColour(localColor, pSeq);
-            socket.sendMatchState(roomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
+            socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
           }
         }
       }
@@ -385,6 +373,7 @@ function Game({
       dispatch(declareForfeit({ losingColour: localLoserColor }));
     };
 
+    // IMPORTANT: Register onmatchdata BEFORE calling joinMatch() so we never miss OpCode 1
     socket.onmatchdata = (result: MatchData) => {
       const data = new TextDecoder().decode(result.data);
       let parsed;
@@ -394,18 +383,21 @@ function Game({
 
       const opCode = result.op_code;
 
-      if (opCode === 1) { // Init Match Data
+      if (opCode === 1) { // Init Match Data — server sends player list, starts game
         if (playersRegisteredInitiallyRef.current) {
           const playersList = parsed.players;
           const mappedSequence = playersList.map((p: any) => p.color);
           
+          const effectivePlayerId = getEffectivePlayerId();
           const myMatchPlayer = playersList.find((p: any) => p.userId === myUserId || p.id === effectivePlayerId);
-          if (myMatchPlayer) setMyPlayerColour(myMatchPlayer.color);
+          if (myMatchPlayer) {
+            setMyPlayerColour(myMatchPlayer.color);
+            myPlayerColourRef.current = myMatchPlayer.color;
+          }
           
           dispatch(setPlayerSequenceDirect(mappedSequence));
           dispatch(setGameStartTime(Date.now()));
           
-          // Set match duration based on player count: 5 mins for 2P, 10 mins for 4P
           const matchDurationMs = playersList.length === 2 ? 300000 : 600000;
           dispatch(setMatchDuration(matchDurationMs));
 
@@ -426,7 +418,6 @@ function Game({
           }
           playersRegisteredInitiallyRef.current = false;
           setIsMatchJoined(true);
-
         }
       } else if (opCode === 2) {
         handleTurnUpdate(parsed);
@@ -441,12 +432,41 @@ function Game({
       }
     };
 
-    joinMatch();
+    // Now join the match — handler is already registered above
+    const joinMatchAsync = async () => {
+      if (matchJoinedRef.current) return;
+      matchJoinedRef.current = true;
+      try {
+        console.log("Attempting to join match. matchId:", matchId, "matchedToken:", matchedToken);
+        let match;
+        if (matchedToken) {
+          console.log("Joining via matchmaking token:", matchedToken);
+          match = await socket.joinMatch(undefined, matchedToken);
+        } else if (matchId) {
+          console.log("Joining via matchId:", matchId);
+          match = await socket.joinMatch(matchId);
+        } else {
+          throw new Error("No match ID or matchmaking token provided.");
+        }
+        setRoomId(match.match_id);
+        roomIdRef.current = match.match_id;
+        if (match.self && match.self.session_id) {
+          setLocalSessionId(match.self.session_id);
+        }
+      } catch (e: any) {
+        matchJoinedRef.current = false;
+        toast.error("Error joining match: " + e.message);
+        navigate('/setup');
+      }
+    };
+
+    joinMatchAsync();
 
     return () => {
       socket.onmatchdata = () => {};
     };
-  }, [isOnline, matchedToken, matchId, myPlayerId, myUserId, colorMap, dispatch, moveAndCapture, roomId, store, myPlayerColour, localSessionId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOnline, matchedToken, matchId, myPlayerId, myUserId]);
 
   const handleDiceRoll = (colour: TPlayerColour, diceNumber: number) => {
     if (!isOnline) {
