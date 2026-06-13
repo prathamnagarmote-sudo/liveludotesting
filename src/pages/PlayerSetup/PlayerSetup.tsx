@@ -153,10 +153,35 @@ function PlayerSetup() {
           // DEBUGGING: log the full matched object
           console.log("=== MATCHMAKER MATCHED ===");
           console.log("matched.match_id:", matched.match_id);
+          console.log("matched.matchId (camelCase):", (matched as any).matchId);
           console.log("matched.token:", matched.token);
           console.log("matched.ticket:", matched.ticket);
-          console.log("matched.self:", matched.self);
-          console.log("matched.users:", matched.users);
+          console.log("Full matched object:", JSON.stringify(matched));
+
+          // Nakama JS SDK converts snake_case to camelCase, so try both
+          // Also decode the JWT token to extract the match_id from the payload ('mid' field)
+          const extractMatchIdFromToken = (token: string): string | undefined => {
+            try {
+              const payload = JSON.parse(atob(token.split('.')[1]));
+              console.log("JWT payload:", payload);
+              // Nakama puts match_id as 'mid' in the token payload
+              const mid = payload.mid as string;
+              if (mid) return mid.endsWith('.') ? mid.slice(0, -1) + '.nakama' : mid;
+              return undefined;
+            } catch {
+              return undefined;
+            }
+          };
+
+          // Try every possible location for the match_id
+          const resolvedMatchId: string =
+            matched.match_id ||
+            (matched as any).matchId ||
+            (matched as any).match_id ||
+            (matched.token ? extractMatchIdFromToken(matched.token) : undefined) ||
+            '';
+
+          console.log("=== RESOLVED matchId:", resolvedMatchId, "===");
 
           // Find the opponent presence in 2 player match
           const opponent = matched.users.find(
@@ -186,7 +211,7 @@ function PlayerSetup() {
               navigate('/play', {
                 state: {
                   isOnline: true,
-                  matchId: matched.match_id,  // Use match_id for authoritative match
+                  matchId: resolvedMatchId,  // Use resolved matchId (handles SDK camelCase conversion)
                   myPlayerId: matched.self.presence.session_id,
                   myUserId: getSession()?.user_id || currentUser?.userId,
                   canonicalColour: 'blue'
