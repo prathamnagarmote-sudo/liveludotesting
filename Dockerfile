@@ -4,7 +4,7 @@ FROM node:18-alpine AS node-builder
 WORKDIR /app/nakama
 
 COPY nakama/package.json ./
-RUN npm install
+RUN apk add --no-cache git && npm install
 
 COPY nakama/tsconfig.json ./
 COPY nakama/*.ts ./
