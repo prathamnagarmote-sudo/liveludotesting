@@ -54,6 +54,10 @@ type Props = {
   isOnline?: boolean;
   matchedToken?: string;
   matchId?: string;
+  matchedUsers?: Array<{
+    presence: { user_id: string; session_id: string; username: string };
+    string_properties?: { avatarUrl?: string; avatar_url?: string; level?: string };
+  }>;
   myPlayerId?: string;
   myUserId?: string;
   canonicalColour?: TPlayerColour;
@@ -74,6 +78,7 @@ function Game({
   isOnline,
   matchedToken,
   matchId,
+  matchedUsers,
   myPlayerId,
   myUserId,
   canonicalColour
@@ -420,6 +425,30 @@ function Game({
         }
       } else if (opCode === 2) {
         handleTurnUpdate(parsed);
+      } else if (opCode === 3) {
+        // Dice roll request — in relay matches, the host handles this (server doesn't run)
+        // Check if I'm the "host" (lowest session_id alphabetically)
+        if (matchedUsers && matchedUsers.length > 0) {
+          const mySessionId = localSessionId || myPlayerId || '';
+          const allSessionIds = matchedUsers.map(u => u.presence.session_id).sort();
+          const amHost = allSessionIds[0] === mySessionId;
+          if (amHost) {
+            const currentRoomId = roomIdRef.current;
+            const state = store.getState();
+            const currentPlayer = state.players.players.find(
+              p => p.colour === state.players.currentPlayerColour
+            );
+            if (currentPlayer) {
+              const roll = Math.floor(Math.random() * 6) + 1;
+              const rollPayload = JSON.stringify({
+                playerId: currentPlayer.id,
+                playerUserId: currentPlayer.userId,
+                roll
+              });
+              socket.sendMatchState(currentRoomId, 8, rollPayload);
+            }
+          }
+        }
       } else if (opCode === 8) {
         handleDiceRolled(parsed);
       } else if (opCode === 5) {
@@ -438,26 +467,60 @@ function Game({
       try {
         // Ensure socket is alive before joining (it may have briefly dropped during React navigation)
         const liveSocket = await ensureSocketConnected();
-        console.log("Attempting to join match. matchId:", matchId, "matchedToken:", matchedToken);
+        console.log("Attempting to join match. matchId:", matchId, "matchedToken:", matchedToken ? 'present' : 'missing');
         let match;
+
         if (matchId) {
-          // Authoritative match — always join via match_id
+          // Authoritative match — join via match_id
           console.log("Joining via matchId:", matchId);
           match = await liveSocket.joinMatch(matchId);
         } else if (matchedToken) {
-          // Relay match fallback — join via token
-          console.log("Joining via matchmaking token:", matchedToken);
+          // Relay match — join via token (when server's matchmakerMatched returns void)
+          console.log("Joining via relay token");
           match = await liveSocket.joinMatch(undefined, matchedToken);
         } else {
           throw new Error("No match ID or matchmaking token provided.");
         }
-        setRoomId(match.match_id);
-        roomIdRef.current = match.match_id;
-        if (match.self && match.self.session_id) {
-          setLocalSessionId(match.self.session_id);
+
+        const joinedMatchId = match.match_id;
+        setRoomId(joinedMatchId);
+        roomIdRef.current = joinedMatchId;
+
+        const mySessionId = match.self?.session_id || '';
+        if (mySessionId) setLocalSessionId(mySessionId);
+
+        // --- Relay match host initialization ---
+        // When server fails to create authoritative match, we get a relay match.
+        // The "host" (first session_id alphabetically) must send OpCode 1 to
+        // initialize game state for all players, mimicking server behavior.
+        if (!matchId && matchedToken && matchedUsers && matchedUsers.length > 0) {
+          const allSessionIds = matchedUsers.map(u => u.presence.session_id).sort();
+          const amHost = allSessionIds[0] === mySessionId;
+          console.log("Relay match. amHost:", amHost, "mySessionId:", mySessionId);
+
+          if (amHost) {
+            const colors: TPlayerColour[] = ['blue', 'green', 'red', 'yellow'];
+            const players = matchedUsers.map((u, idx) => ({
+              id: u.presence.session_id,
+              userId: u.presence.user_id,
+              name: u.presence.username || ('Player ' + (idx + 1)),
+              isBot: false,
+              avatarUrl: u.string_properties?.avatarUrl || u.string_properties?.avatar_url || '',
+              level: parseInt(u.string_properties?.level || '1'),
+              color: colors[idx]
+            }));
+
+            // Wait 1.5s to ensure both clients have joined and registered their handlers
+            setTimeout(() => {
+              const initPayload = JSON.stringify({ players, roomId: joinedMatchId });
+              console.log("Host sending relay OpCode 1:", initPayload);
+              liveSocket.sendMatchState(joinedMatchId, 1, initPayload);
+            }, 1500);
+          }
         }
       } catch (e: any) {
         matchJoinedRef.current = false;
+        console.error("Error joining match:", e);
         toast.error("Error joining match: " + e.message);
         navigate('/setup');
       }

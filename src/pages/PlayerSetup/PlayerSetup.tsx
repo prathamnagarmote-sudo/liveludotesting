@@ -211,7 +211,9 @@ function PlayerSetup() {
               navigate('/play', {
                 state: {
                   isOnline: true,
-                  matchId: resolvedMatchId,  // Use resolved matchId (handles SDK camelCase conversion)
+                  matchId: resolvedMatchId,        // Authoritative match ID (empty if server failed)
+                  matchedToken: matched.token,      // Relay token (fallback when matchId is empty)
+                  matchedUsers: matched.users,      // Player list for relay host initialization
                   myPlayerId: matched.self.presence.session_id,
                   myUserId: getSession()?.user_id || currentUser?.userId,
                   canonicalColour: 'blue'
