@@ -1,5 +1,6 @@
 /// <reference types="nakama-runtime" />
-export const matchInit = function(
+
+function matchInit(
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
   nk: nkruntime.Nakama,
@@ -9,7 +10,7 @@ export const matchInit = function(
   
   const players = JSON.parse(params.players || '[]');
   
-  const state = {
+  const state: any = {
     roomId: ctx.matchId,
     players: players,
     currentTurnIndex: 0,
@@ -22,12 +23,12 @@ export const matchInit = function(
 
   return {
     state,
-    tickRate: 10, // 10 ticks per second
+    tickRate: 10,
     label: ""
   };
-};
+}
 
-export const matchJoinAttempt = function(
+function matchJoinAttempt(
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
   nk: nkruntime.Nakama,
@@ -37,15 +38,14 @@ export const matchJoinAttempt = function(
   presence: nkruntime.Presence,
   metadata: {[key: string]: any}
 ): {state: nkruntime.MatchState, accept: boolean, rejectMessage?: string} | null {
-  // Allow players to join if they are part of the state
   const player = state.players.find((p: any) => p.userId === presence.userId);
   if (player) {
     return { state, accept: true };
   }
   return { state, accept: false, rejectMessage: "Not part of this match" };
-};
+}
 
-export const matchJoin = function(
+function matchJoin(
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
   nk: nkruntime.Nakama,
@@ -57,7 +57,7 @@ export const matchJoin = function(
   presences.forEach(presence => {
     const player = state.players.find((p: any) => p.userId === presence.userId);
     if (player) {
-      player.id = presence.sessionId; // update session id
+      player.id = presence.sessionId;
       player.isBot = false;
       if (player.name.includes(' (Bot)')) {
         player.name = player.name.replace(' (Bot)', '');
@@ -66,7 +66,6 @@ export const matchJoin = function(
         delete state.botTakeoverTicks[presence.userId];
       }
       
-      // Send current state to the joining player
       dispatcher.broadcastMessage(1, JSON.stringify({
         roomId: state.roomId,
         players: state.players,
@@ -85,9 +84,9 @@ export const matchJoin = function(
   });
 
   return { state };
-};
+}
 
-export const matchLeave = function(
+function matchLeave(
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
   nk: nkruntime.Nakama,
@@ -99,16 +98,33 @@ export const matchLeave = function(
   presences.forEach(presence => {
     const playerIndex = state.players.findIndex((p: any) => p.userId === presence.userId);
     if (playerIndex !== -1) {
-      const player = state.players[playerIndex];
-      // Set to convert to bot after 40 ticks (4 seconds at 10 ticks/s)
       state.botTakeoverTicks[presence.userId] = tick + 40;
     }
   });
-
   return { state };
-};
+}
 
-export const matchLoop = function(
+function processTurn(state: any, dispatcher: nkruntime.MatchDispatcher) {
+  const currentPlayer = state.players[state.currentTurnIndex];
+  dispatcher.broadcastMessage(2, JSON.stringify({
+    currentTurnIndex: state.currentTurnIndex,
+    currentPlayerId: currentPlayer.id,
+    currentPlayerColour: currentPlayer.color
+  }));
+}
+
+function executeRoll(state: any, dispatcher: nkruntime.MatchDispatcher, playerId: string) {
+  const roll = Math.floor(Math.random() * 6) + 1;
+  state.diceValue = roll;
+  const player = state.players.find((p: any) => p.id === playerId);
+  dispatcher.broadcastMessage(8, JSON.stringify({
+    playerId,
+    playerUserId: player ? player.userId : undefined,
+    roll
+  }));
+}
+
+function matchLoop(
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
   nk: nkruntime.Nakama,
@@ -119,7 +135,6 @@ export const matchLoop = function(
 ): {state: nkruntime.MatchState} | null {
   state.tickCount = tick;
 
-  // Check bot takeovers
   for (const userId in state.botTakeoverTicks) {
     if (tick >= state.botTakeoverTicks[userId]) {
       const playerIndex = state.players.findIndex((p: any) => p.userId === userId);
@@ -130,7 +145,7 @@ export const matchLoop = function(
           const opponent = state.players.find((p: any) => p.userId !== userId);
           if (opponent) {
             dispatcher.broadcastMessage(10, JSON.stringify({ winnerColor: opponent.color, loserColor: player.color }));
-            return null; // end match
+            return null;
           }
         }
         
@@ -153,35 +168,34 @@ export const matchLoop = function(
     }
   }
 
-  // Handle messages
-  messages.forEach(message => {
+  messages.forEach(function(message) {
     try {
       const data = JSON.parse(nk.binaryToString(message.data));
       const opCode = message.opCode;
       
       const currentPlayer = state.players[state.currentTurnIndex];
 
-      if (opCode === 3) { // request_roll
+      if (opCode === 3) {
         if (currentPlayer.id !== message.sender.sessionId && !currentPlayer.isBot) {
           return;
         }
         executeRoll(state, dispatcher, currentPlayer.id);
       } 
-      else if (opCode === 4) { // submit_move
+      else if (opCode === 4) {
         dispatcher.broadcastMessage(5, JSON.stringify({
           colour: currentPlayer.color,
           id: data.tokenId,
           isUnlock: data.isUnlock
         }));
       }
-      else if (opCode === 6) { // finish_turn
+      else if (opCode === 6) {
         const nextIndex = state.players.findIndex((p: any) => p.color === data.nextTurnColour);
         if (nextIndex !== -1) {
           state.currentTurnIndex = nextIndex;
           processTurn(state, dispatcher);
         }
       }
-      else if (opCode === 7) { // exit_match
+      else if (opCode === 7) {
         const playerIndex = state.players.findIndex((p: any) => p.id === message.sender.sessionId);
         if (playerIndex !== -1) {
           const player = state.players[playerIndex];
@@ -189,7 +203,7 @@ export const matchLoop = function(
             const opponent = state.players.find((p: any) => p.id !== message.sender.sessionId);
             if (opponent) {
               dispatcher.broadcastMessage(10, JSON.stringify({ winnerColor: opponent.color, loserColor: player.color }));
-              return null; // Stop match
+              return;
             }
           }
           player.isBot = true;
@@ -211,23 +225,22 @@ export const matchLoop = function(
     }
   });
 
-  // Bot logic
   const currentPlayer = state.players[state.currentTurnIndex];
   if (currentPlayer.isBot) {
     if (!state.botRollTick) {
-      state.botRollTick = tick + 15; // 1.5 seconds at 10 ticks/s
+      state.botRollTick = tick + 15;
     } else if (tick >= state.botRollTick) {
       executeRoll(state, dispatcher, currentPlayer.id);
-      state.botRollTick = null; // Clear so it only rolls once
+      state.botRollTick = null;
     }
   } else {
     state.botRollTick = null;
   }
 
-  // Check if match is empty
   let isMatchEmpty = true;
-  for (const player of state.players) {
-    if (!player.isBot && Object.keys(state.botTakeoverTicks).indexOf(player.userId) === -1) {
+  for (let i = 0; i < state.players.length; i++) {
+    const p = state.players[i];
+    if (!p.isBot && !(p.userId in state.botTakeoverTicks)) {
       isMatchEmpty = false;
       break;
     }
@@ -235,7 +248,7 @@ export const matchLoop = function(
 
   if (isMatchEmpty) {
     state.emptyTicks++;
-    if (state.emptyTicks > 100) { // End match if empty for 10 seconds
+    if (state.emptyTicks > 100) {
       return null;
     }
   } else {
@@ -243,9 +256,9 @@ export const matchLoop = function(
   }
 
   return { state };
-};
+}
 
-export const matchTerminate = function(
+function matchTerminate(
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
   nk: nkruntime.Nakama,
@@ -255,9 +268,9 @@ export const matchTerminate = function(
   graceSeconds: number
 ): {state: nkruntime.MatchState} | null {
   return { state };
-};
+}
 
-export const matchSignal = function(
+function matchSignal(
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
   nk: nkruntime.Nakama,
@@ -267,24 +280,4 @@ export const matchSignal = function(
   data: string
 ): {state: nkruntime.MatchState, data?: string} | null {
   return { state };
-};
-
-function processTurn(state: any, dispatcher: nkruntime.MatchDispatcher) {
-  const currentPlayer = state.players[state.currentTurnIndex];
-  dispatcher.broadcastMessage(2, JSON.stringify({
-    currentTurnIndex: state.currentTurnIndex,
-    currentPlayerId: currentPlayer.id,
-    currentPlayerColour: currentPlayer.color
-  }));
-}
-
-function executeRoll(state: any, dispatcher: nkruntime.MatchDispatcher, playerId: string) {
-  const roll = Math.floor(Math.random() * 6) + 1;
-  state.diceValue = roll;
-  const player = state.players.find((p: any) => p.id === playerId);
-  dispatcher.broadcastMessage(8, JSON.stringify({
-    playerId,
-    playerUserId: player ? player.userId : undefined,
-    roll
-  }));
 }

@@ -1,17 +1,17 @@
 {
+  "files": [
+    "./match.ts",
+    "./main.ts"
+  ],
   "compilerOptions": {
     "target": "es5",
-    "lib": ["es2015", "es5", "dom"],
-    "module": "esnext",
-    "strict": true,
+    "typeRoots": [
+      "./node_modules"
+    ],
+    "outFile": "./build/index.js",
+    "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "typeRoots": [
-      "node_modules/@types"
-    ]
-  },
-  "include": [
-    "**/*.ts"
-  ]
+    "forceConsistentCasingInFileNames": true
+  }
 }

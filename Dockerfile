@@ -1,17 +1,14 @@
 # Build TypeScript code
-FROM node:22-alpine AS node-builder
-
-WORKDIR /app
-
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-COPY nakama/package.json nakama/pnpm-lock.yaml ./nakama/
+FROM node:18-alpine AS node-builder
 
 WORKDIR /app/nakama
-RUN pnpm install --frozen-lockfile
 
-COPY nakama/tsconfig.json nakama/rollup.config.js nakama/*.ts ./
-RUN pnpm run build
+COPY nakama/package.json ./
+RUN npm install
+
+COPY nakama/tsconfig.json ./
+COPY nakama/*.ts ./
+RUN npm run build
 
 # Run Nakama
 FROM heroiclabs/nakama:3.21.1
