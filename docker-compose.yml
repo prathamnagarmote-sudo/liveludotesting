@@ -7,9 +7,14 @@ services:
       - POSTGRES_PASSWORD=localdb
     volumes:
       - data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
 
   nakama:
-    image: heroiclabs/nakama:latest
+    image: heroiclabs/nakama:3.21.1
     entrypoint:
       - "/bin/sh"
       - "-ecx"
@@ -17,7 +22,8 @@ services:
         /nakama/nakama migrate up --database.address postgres:localdb@postgres:5432/nakama &&
         exec /nakama/nakama --name nakama1 --database.address postgres:localdb@postgres:5432/nakama --logger.level DEBUG
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "7350:7350"
     volumes:

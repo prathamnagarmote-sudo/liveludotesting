@@ -53,6 +53,7 @@ type Props = {
   initData?: TPlayerInitData[];
   isOnline?: boolean;
   matchedToken?: string;
+  matchId?: string;
   myPlayerId?: string;
   myUserId?: string;
   canonicalColour?: TPlayerColour;
@@ -72,6 +73,7 @@ function Game({
   initData = [],
   isOnline,
   matchedToken,
+  matchId,
   myPlayerId,
   myUserId,
   canonicalColour
@@ -184,7 +186,7 @@ function Game({
 
   // Handle Online Match turn coordination
   useEffect(() => {
-    if (!isOnline || !matchedToken) return;
+    if (!isOnline || (!matchedToken && !matchId)) return;
 
     const effectivePlayerId = localSessionId || myPlayerId;
 
@@ -200,7 +202,17 @@ function Game({
       if (matchJoinedRef.current) return;
       matchJoinedRef.current = true;
       try {
-        const match = await socket.joinMatch(matchedToken);
+        console.log("Attempting to join match. matchId:", matchId, "matchedToken:", matchedToken);
+        let match;
+        if (matchId) {
+          console.log("Joining via matchId:", matchId);
+          match = await socket.joinMatch(matchId);
+        } else if (matchedToken) {
+          console.log("Joining via matchmaking token:", matchedToken);
+          match = await socket.joinMatch(undefined, matchedToken);
+        } else {
+          throw new Error("No match ID or matchmaking token provided.");
+        }
         setRoomId(match.match_id);
         if (match.self && match.self.session_id) {
           setLocalSessionId(match.self.session_id);
@@ -430,7 +442,7 @@ function Game({
     return () => {
       socket.onmatchdata = () => {};
     };
-  }, [isOnline, matchedToken, myPlayerId, myUserId, colorMap, dispatch, moveAndCapture, roomId, store, myPlayerColour, localSessionId]);
+  }, [isOnline, matchedToken, matchId, myPlayerId, myUserId, colorMap, dispatch, moveAndCapture, roomId, store, myPlayerColour, localSessionId]);
 
   const handleDiceRoll = (colour: TPlayerColour, diceNumber: number) => {
     if (!isOnline) {

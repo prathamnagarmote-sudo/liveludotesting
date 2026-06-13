@@ -173,7 +173,8 @@ function PlayerSetup() {
               navigate('/play', {
                 state: {
                   isOnline: true,
-                  matchedToken: matched.match_id || matched.token,
+                  matchId: matched.match_id,
+                  matchedToken: matched.token,
                   myPlayerId: matched.self.presence.session_id,
                   myUserId: getSession()?.user_id || currentUser?.userId,
                   canonicalColour: 'blue'
