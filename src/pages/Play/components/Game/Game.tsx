@@ -213,6 +213,43 @@ function Game({
 
     const getEffectivePlayerId = () => localSessionId || myPlayerId || '';
 
+    const initializeGame = (playersList: any[]) => {
+      if (!playersRegisteredInitiallyRef.current) return;
+      console.log("Initializing game locally with player list:", playersList);
+      
+      const mappedSequence = playersList.map((p: any) => p.color);
+      const effectivePlayerId = getEffectivePlayerId();
+      const myMatchPlayer = playersList.find((p: any) => p.userId === myUserId || p.id === effectivePlayerId);
+      if (myMatchPlayer) {
+        setMyPlayerColour(myMatchPlayer.color);
+        myPlayerColourRef.current = myMatchPlayer.color;
+      }
+      
+      dispatch(setPlayerSequenceDirect(mappedSequence));
+      dispatch(setGameStartTime(Date.now()));
+      
+      const matchDurationMs = playersList.length === 2 ? 300000 : 600000;
+      dispatch(setMatchDuration(matchDurationMs));
+
+      for (let i = 0; i < playersList.length; i++) {
+        const p = playersList[i];
+        dispatch(
+          registerNewPlayer({
+            name: p.name,
+            colour: p.color,
+            isBot: p.isBot,
+            avatarUrl: p.avatarUrl,
+            level: p.level,
+            id: p.id,
+            userId: p.userId
+          })
+        );
+        dispatch(registerDice(p.color));
+      }
+      playersRegisteredInitiallyRef.current = false;
+      setIsMatchJoined(true);
+    };
+
     const handleTurnUpdate = (data: { currentTurnIndex: number; currentPlayerId: string; currentPlayerColour: TPlayerColour }) => {
       const localColor = colorMap[data.currentPlayerColour] || data.currentPlayerColour;
       dispatch(setCurrentPlayerColour(localColor));
@@ -390,41 +427,7 @@ function Game({
       const opCode = result.op_code;
 
       if (opCode === 1) { // Init Match Data — server sends player list, starts game
-        if (playersRegisteredInitiallyRef.current) {
-          const playersList = parsed.players;
-          const mappedSequence = playersList.map((p: any) => p.color);
-          
-          const effectivePlayerId = getEffectivePlayerId();
-          const myMatchPlayer = playersList.find((p: any) => p.userId === myUserId || p.id === effectivePlayerId);
-          if (myMatchPlayer) {
-            setMyPlayerColour(myMatchPlayer.color);
-            myPlayerColourRef.current = myMatchPlayer.color;
-          }
-          
-          dispatch(setPlayerSequenceDirect(mappedSequence));
-          dispatch(setGameStartTime(Date.now()));
-          
-          const matchDurationMs = playersList.length === 2 ? 300000 : 600000;
-          dispatch(setMatchDuration(matchDurationMs));
-
-          for (let i = 0; i < playersList.length; i++) {
-            const p = playersList[i];
-            dispatch(
-              registerNewPlayer({
-                name: p.name,
-                colour: p.color,
-                isBot: p.isBot,
-                avatarUrl: p.avatarUrl,
-                level: p.level,
-                id: p.id,
-                userId: p.userId
-              })
-            );
-            dispatch(registerDice(p.color));
-          }
-          playersRegisteredInitiallyRef.current = false;
-          setIsMatchJoined(true);
-        }
+        initializeGame(parsed.players);
       } else if (opCode === 2) {
         handleTurnUpdate(parsed);
       } else if (opCode === 3) {
@@ -553,6 +556,7 @@ function Game({
               const initPayload = JSON.stringify({ players, roomId: joinedMatchId });
               console.log("Host sending relay OpCode 1:", initPayload);
               liveSocket.sendMatchState(joinedMatchId, 1, initPayload);
+              initializeGame(players);
             }, 1500);
           } else {
             // Non-host sends a request immediately after joining
