@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, useContext } from 'react';
-import { deactivateAllTokens, setIsAnyTokenMoving } from '../../../../state/slices/playersSlice';
+import { deactivateAllTokens, setIsAnyTokenMoving, setCurrentPlayerColour } from '../../../../state/slices/playersSlice';
 import { type TPlayer, type TPlayerColour, type TTokenClickData } from '../../../../types';
 import { type TToken } from '../../../../types';
 import { useDispatch, useSelector } from 'react-redux';
@@ -30,10 +30,15 @@ type Props = {
   tokenClickData: TTokenClickData | null;
 };
 
+const getNextTurnColour = (currentColour: TPlayerColour, playerSequence: TPlayerColour[]): TPlayerColour => {
+  const idx = playerSequence.indexOf(currentColour);
+  return playerSequence[(idx + 1) % playerSequence.length];
+};
+
 function Token({ colour, id, tokenClickData }: Props) {
   const dispatch = useDispatch<AppDispatch>();
   const { tokenHeight, tokenWidth } = useSelector((state: RootState) => state.board);
-  const { players } = useSelector((state: RootState) => state.players);
+  const { players, playerSequence } = useSelector((state: RootState) => state.players);
   const tokenClickDataRef = useRef(tokenClickData);
   const [isCurrentlyFocused, setIsCurrentlyFocused] = useState(false);
   const tokenElRef = useRef<HTMLButtonElement | null>(null);
@@ -91,15 +96,45 @@ function Token({ colour, id, tokenClickData }: Props) {
           id,
           isUnlock: isLocked
         }));
-        if (isLocked && isActive && diceNumber !== -1 && diceNumber) unlock();
-        executeTokenMove();
+        
+        const runOnlineMove = async () => {
+          if (isLocked) {
+            if (isActive && diceNumber !== -1 && diceNumber) {
+              unlock();
+              const nextColour = colour;
+              getNakamaSocket().sendMatchState(onlineContext.roomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
+              dispatch(setCurrentPlayerColour(nextColour));
+              dispatch(deactivateAllTokens(nextColour));
+            }
+          } else {
+            if (isActive && diceNumber !== -1 && diceNumber) {
+              const moveData = await moveAndCapture(token, diceNumber);
+              if (moveData) {
+                const { hasTokenReachedHome, isCaptured, hasPlayerWon } = moveData;
+                if (hasPlayerWon) return;
+                
+                const getsAnotherTurn = (diceNumber === 6 && numberOfConsecutiveSix < 3) || isCaptured || hasTokenReachedHome;
+                const nextColour = getsAnotherTurn ? colour : getNextTurnColour(colour, playerSequence);
+                getNakamaSocket().sendMatchState(onlineContext.roomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
+                dispatch(setCurrentPlayerColour(nextColour));
+                dispatch(deactivateAllTokens(nextColour));
+              } else {
+                const nextColour = getNextTurnColour(colour, playerSequence);
+                getNakamaSocket().sendMatchState(onlineContext.roomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
+                dispatch(setCurrentPlayerColour(nextColour));
+                dispatch(deactivateAllTokens(nextColour));
+              }
+            }
+          }
+        };
+        runOnlineMove();
       } else {
         executeTokenMove();
       }
     }
-  }, [colour, executeTokenMove, id, tokenClickData, onlineContext, isLocked, isActive, diceNumber]);
+  }, [colour, executeTokenMove, id, tokenClickData, onlineContext, isLocked, isActive, diceNumber, playerSequence, token, moveAndCapture, numberOfConsecutiveSix, dispatch]);
 
-  const handleTokenClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
+  const handleTokenClick: React.MouseEventHandler<HTMLButtonElement> = async (e) => {
     e.stopPropagation();
     tokenElRef.current?.blur?.();
     if (onlineContext?.isOnline) {
@@ -108,8 +143,35 @@ function Token({ colour, id, tokenClickData }: Props) {
         id,
         isUnlock: isLocked
       }));
-      if (isLocked && isActive && diceNumber !== -1 && diceNumber) unlock();
-      executeTokenMove();
+      
+      if (isLocked) {
+        if (isActive && diceNumber !== -1 && diceNumber) {
+          unlock();
+          const nextColour = colour;
+          getNakamaSocket().sendMatchState(onlineContext.roomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
+          dispatch(setCurrentPlayerColour(nextColour));
+          dispatch(deactivateAllTokens(nextColour));
+        }
+      } else {
+        if (isActive && diceNumber !== -1 && diceNumber) {
+          const moveData = await moveAndCapture(token, diceNumber);
+          if (moveData) {
+            const { hasTokenReachedHome, isCaptured, hasPlayerWon } = moveData;
+            if (hasPlayerWon) return;
+
+            const getsAnotherTurn = (diceNumber === 6 && numberOfConsecutiveSix < 3) || isCaptured || hasTokenReachedHome;
+            const nextColour = getsAnotherTurn ? colour : getNextTurnColour(colour, playerSequence);
+            getNakamaSocket().sendMatchState(onlineContext.roomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
+            dispatch(setCurrentPlayerColour(nextColour));
+            dispatch(deactivateAllTokens(nextColour));
+          } else {
+            const nextColour = getNextTurnColour(colour, playerSequence);
+            getNakamaSocket().sendMatchState(onlineContext.roomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
+            dispatch(setCurrentPlayerColour(nextColour));
+            dispatch(deactivateAllTokens(nextColour));
+          }
+        }
+      }
     } else {
       if (isLocked && isActive && diceNumber !== -1 && diceNumber) unlock();
       executeTokenMove();
