@@ -3,13 +3,13 @@ import IntroPage from './pages/IntroPage/IntroPage.tsx';
 import LoadingScreen from './components/LoadingScreen/LoadingScreen.tsx';
 import NotFound from './pages/NotFound/NotFound.tsx';
 import ErrorBoundary from './pages/ErrorBoundary/ErrorBoundary.tsx';
-import { lazy, Suspense, type LazyExoticComponent, type ReactElement } from 'react';
+import { lazy, Suspense, type LazyExoticComponent } from 'react';
 
 const Play = lazy(() => import('./pages/Play/Play.tsx'));
-import PlayerSetup from './pages/PlayerSetup/PlayerSetup.tsx';
+const PlayerSetup = lazy(() => import('./pages/PlayerSetup/PlayerSetup.tsx'));
 const HowToPlay = lazy(() => import('./pages/HowToPlay/HowToPlay.tsx'));
 
-const wrapWithSuspense = (Component: LazyExoticComponent<() => ReactElement>) => (
+const wrapWithSuspense = (Component: LazyExoticComponent<React.ComponentType<any>>) => (
   <Suspense fallback={<LoadingScreen />}>
     <Component />
   </Suspense>
@@ -30,7 +30,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/setup',
-        element: <PlayerSetup />,
+        element: wrapWithSuspense(PlayerSetup),
       },
       {
         path: '/how-to-play',

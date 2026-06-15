@@ -162,13 +162,20 @@ function PlayerSetup() {
           // Also decode the JWT token to extract the match_id from the payload ('mid' field)
           const extractMatchIdFromToken = (token: string): string | undefined => {
             try {
-              const payload = JSON.parse(atob(token.split('.')[1]));
+              const base64Url = token.split('.')[1];
+              if (!base64Url) return undefined;
+              let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+              while (base64.length % 4) {
+                base64 += '=';
+              }
+              const payload = JSON.parse(atob(base64));
               console.log("JWT payload:", payload);
               // Nakama puts match_id as 'mid' in the token payload
               const mid = payload.mid as string;
               if (mid) return mid.endsWith('.') ? mid.slice(0, -1) + '.nakama' : mid;
               return undefined;
-            } catch {
+            } catch (e) {
+              console.error("Failed to decode token for matchId:", e);
               return undefined;
             }
           };

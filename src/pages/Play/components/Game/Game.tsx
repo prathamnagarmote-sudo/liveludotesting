@@ -377,6 +377,8 @@ function Game({
       dispatch(declareForfeit({ losingColour: localLoserColor }));
     };
 
+    let requestInterval: any;
+
     // IMPORTANT: Register onmatchdata BEFORE calling joinMatch() so we never miss OpCode 1
     socket.onmatchdata = (result: MatchData) => {
       const data = new TextDecoder().decode(result.data);
@@ -457,6 +459,33 @@ function Game({
         handlePlayerDisconnected(parsed);
       } else if (opCode === 10) {
         handleMatchForfeited(parsed);
+      } else if (opCode === 98) {
+        // Request Init Data (Relay Match fallback)
+        // If I am the host and have the players list, send it to the requesting player
+        const mySessionId = localSessionId || myPlayerId || '';
+        if (matchedUsers && matchedUsers.length > 0) {
+          const allSessionIds = matchedUsers.map(u => u.presence.session_id).sort();
+          const amHost = allSessionIds[0] === mySessionId;
+          if (amHost) {
+            const colors: TPlayerColour[] = ['blue', 'green', 'red', 'yellow'];
+            const players = matchedUsers.map((u, idx) => ({
+              id: u.presence.session_id,
+              userId: u.presence.user_id,
+              name: u.presence.username || ('Player ' + (idx + 1)),
+              isBot: false,
+              avatarUrl: u.string_properties?.avatarUrl || u.string_properties?.avatar_url || '',
+              level: parseInt(u.string_properties?.level || '1'),
+              color: colors[idx]
+            }));
+            const initPayload = JSON.stringify({ players, roomId: roomIdRef.current });
+            console.log("Host responding to OpCode 98 request with relay OpCode 1:", initPayload);
+            try {
+              socket.sendMatchState(roomIdRef.current, 1, initPayload);
+            } catch (err) {
+              console.error("Failed to send OpCode 1 payload response:", err);
+            }
+          }
+        }
       }
     };
 
@@ -473,7 +502,16 @@ function Game({
         if (matchId) {
           // Authoritative match — join via match_id
           console.log("Joining via matchId:", matchId);
-          match = await liveSocket.joinMatch(matchId);
+          try {
+            match = await liveSocket.joinMatch(matchId);
+          } catch (err: any) {
+            console.warn("Failed to join authoritative match via matchId. Falling back to relay token...", err);
+            if (matchedToken) {
+              match = await liveSocket.joinMatch(undefined, matchedToken);
+            } else {
+              throw err;
+            }
+          }
         } else if (matchedToken) {
           // Relay match — join via token (when server's matchmakerMatched returns void)
           console.log("Joining via relay token");
@@ -493,7 +531,7 @@ function Game({
         // When server fails to create authoritative match, we get a relay match.
         // The "host" (first session_id alphabetically) must send OpCode 1 to
         // initialize game state for all players, mimicking server behavior.
-        if (!matchId && matchedToken && matchedUsers && matchedUsers.length > 0) {
+        if ((!matchId || match.match_id !== matchId) && matchedToken && matchedUsers && matchedUsers.length > 0) {
           const allSessionIds = matchedUsers.map(u => u.presence.session_id).sort();
           const amHost = allSessionIds[0] === mySessionId;
           console.log("Relay match. amHost:", amHost, "mySessionId:", mySessionId);
@@ -516,10 +554,33 @@ function Game({
               console.log("Host sending relay OpCode 1:", initPayload);
               liveSocket.sendMatchState(joinedMatchId, 1, initPayload);
             }, 1500);
+          } else {
+            // Non-host sends a request immediately after joining
+            const sendRequest = () => {
+              console.log("Non-host sending OpCode 98 request to initialize match...");
+              try {
+                liveSocket.sendMatchState(joinedMatchId, 98, "{}");
+              } catch (err) {
+                console.error("Failed to send OpCode 98 request:", err);
+              }
+            };
+            
+            // Send request immediately
+            sendRequest();
+            
+            // Also try again after 3 seconds if we still haven't joined
+            requestInterval = setInterval(() => {
+              if (playersRegisteredInitiallyRef.current) {
+                sendRequest();
+              } else {
+                if (requestInterval) clearInterval(requestInterval);
+              }
+            }, 3000);
           }
         }
       } catch (e: any) {
         matchJoinedRef.current = false;
+        if (requestInterval) clearInterval(requestInterval);
         console.error("Error joining match:", e);
         toast.error("Error joining match: " + e.message);
         navigate('/setup');
@@ -530,6 +591,7 @@ function Game({
 
     return () => {
       socket.onmatchdata = () => {};
+      if (requestInterval) clearInterval(requestInterval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnline, matchedToken, matchId, myPlayerId, myUserId]);
