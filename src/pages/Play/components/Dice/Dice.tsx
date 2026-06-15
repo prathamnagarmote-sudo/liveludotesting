@@ -55,6 +55,7 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
     () => isAnyTokenActiveOfColour(colour, players),
     [colour, players]
   );
+  const playerObj = players.find((p) => p.colour === colour);
   const isBot = players.find((p) => p.colour === colour)?.isBot;
   const isCurrentPlayer = currentPlayer === colour;
   const isVisualCurrentPlayer = (rollingPlayer || currentPlayer) === colour;
@@ -76,11 +77,24 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
     if (isDiceDisabled) return;
     playDiceRollSound();
     if (onlineContext?.isOnline) {
-      getNakamaSocket().sendMatchState(onlineContext.roomId, 3, "{}");
+      if (onlineContext.amHost) {
+        // Host rolls immediately and broadcasts OpCode 8 to peers
+        const roll = Math.floor(Math.random() * 6) + 1;
+        const rollPayload = {
+          playerId: playerObj?.id || '',
+          playerUserId: playerObj?.userId || '',
+          roll
+        };
+        getNakamaSocket().sendMatchState(onlineContext.roomId, 8, JSON.stringify(rollPayload));
+        dispatch(rollDiceThunk(colour, (diceNumber) => onDiceClick(colour, diceNumber)));
+      } else {
+        // Non-host sends OpCode 3 request to host
+        getNakamaSocket().sendMatchState(onlineContext.roomId, 3, "{}");
+      }
     } else {
       dispatch(rollDiceThunk(colour, (diceNumber) => onDiceClick(colour, diceNumber)));
     }
-  }, [colour, dispatch, isDiceDisabled, onDiceClick, onlineContext]);
+  }, [colour, dispatch, isDiceDisabled, onDiceClick, onlineContext, playerObj]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -91,7 +105,6 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleDiceClick, isDiceDisabled]);
 
-  const playerObj = players.find((p) => p.colour === colour);
   const missedTurns = playerObj?.missedTurns ?? 0;
   const avatarUrl = playerObj?.avatarUrl;
   const hasAvatar = !!avatarUrl;
