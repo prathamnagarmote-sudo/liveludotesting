@@ -77,24 +77,14 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
     if (isDiceDisabled) return;
     playDiceRollSound();
     if (onlineContext?.isOnline) {
-      if (onlineContext.amHost) {
-        // Host rolls immediately and broadcasts OpCode 8 to peers
-        const roll = Math.floor(Math.random() * 6) + 1;
-        const rollPayload = {
-          playerId: playerObj?.id || '',
-          playerUserId: playerObj?.userId || '',
-          roll
-        };
-        getNakamaSocket().sendMatchState(onlineContext.roomId, 8, JSON.stringify(rollPayload));
-        dispatch(rollDiceThunk(colour, (diceNumber) => onDiceClick(colour, diceNumber)));
-      } else {
-        // Non-host sends OpCode 3 request to host
-        getNakamaSocket().sendMatchState(onlineContext.roomId, 3, "{}");
-      }
+      // Always send OpCode 3 (dice roll request) — the HOST handles all dice logic centrally.
+      // This eliminates the double-processing bug where host was running rollDiceThunk
+      // AND receiving its own OpCode 8 broadcast back from the relay server.
+      getNakamaSocket().sendMatchState(onlineContext.roomId, 3, '{}');
     } else {
       dispatch(rollDiceThunk(colour, (diceNumber) => onDiceClick(colour, diceNumber)));
     }
-  }, [colour, dispatch, isDiceDisabled, onDiceClick, onlineContext, playerObj]);
+  }, [colour, dispatch, isDiceDisabled, onDiceClick, onlineContext]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

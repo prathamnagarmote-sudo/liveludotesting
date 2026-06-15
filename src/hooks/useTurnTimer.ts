@@ -120,6 +120,7 @@ export function useTurnTimer(
         // Time is up! Skip turn and increment missed turns
         dispatch(incrementMissedTurns(colour));
         if (onlineContext?.isOnline) {
+          // Only the player whose turn it is broadcasts the turn skip via OpCode 6.
           if (colour === onlineContext.myPlayerColour) {
             try {
               const freshState = store.getState();
