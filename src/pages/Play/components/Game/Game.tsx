@@ -48,6 +48,7 @@ export const OnlineGameContext = createContext<{
   isOnline: boolean;
   roomId: string;
   myPlayerColour: TPlayerColour;
+  amHost: boolean;
 } | null>(null);
 
 type Props = {
@@ -248,7 +249,14 @@ function Game({
         dispatch(registerDice(p.color));
       }
       playersRegisteredInitiallyRef.current = false;
+      dispatch(setCurrentPlayerColour(mappedSequence[0]));
       setIsMatchJoined(true);
+    };
+
+    const transitionTurn = (nextColour: TPlayerColour) => {
+      const localColor = colorMap[nextColour] || nextColour;
+      dispatch(setCurrentPlayerColour(localColor));
+      dispatch(deactivateAllTokens(localColor));
     };
 
     const handleTurnUpdate = (data: { currentTurnIndex: number; currentPlayerId: string; currentPlayerColour: TPlayerColour }) => {
@@ -301,6 +309,7 @@ function Game({
               const pSeq = freshState.players.playerSequence;
               const nextColour = getNextTurnColour(localColor, pSeq);
               socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
+              transitionTurn(nextColour);
             }, 1500);
           }
           return;
@@ -315,10 +324,13 @@ function Game({
               const pSeq = freshState.players.playerSequence;
               const nextColour = getNextTurnColour(localColor, pSeq);
               socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
+              transitionTurn(nextColour);
             }, 1500);
           } else if (movableTokens.length === 1 && areAllTokensInSameCoord(movableTokens)) {
             const token = movableTokens[0];
-            socket.sendMatchState(currentRoomId, 4, JSON.stringify({ tokenId: token.id, isUnlock: token.isLocked }));
+            const payload = { colour: localColor, id: token.id, isUnlock: token.isLocked };
+            socket.sendMatchState(currentRoomId, 5, JSON.stringify(payload));
+            handleTokenMoved(payload);
           } else {
             dispatch(activateTokens({ all: data.roll === 6, colour: localColor, diceNumber: data.roll }));
           }
@@ -331,10 +343,13 @@ function Game({
               const pSeq = freshState.players.playerSequence;
               const nextColour = getNextTurnColour(localColor, pSeq);
               socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
+              transitionTurn(nextColour);
             }, 1500);
           } else {
             setTimeout(() => {
-              socket.sendMatchState(currentRoomId, 4, JSON.stringify({ tokenId: bestToken.id, isUnlock: bestToken.isLocked }));
+              const payload = { colour: localColor, id: bestToken.id, isUnlock: bestToken.isLocked };
+              socket.sendMatchState(currentRoomId, 5, JSON.stringify(payload));
+              handleTokenMoved(payload);
             }, 1500);
           }
         }
@@ -370,6 +385,7 @@ function Game({
           if (localColor === currentMyColour || (isBot && isHost)) {
             const nextColour = localColor; // unlock always gives another turn
             socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
+            transitionTurn(nextColour);
           }
         }, FORWARD_TOKEN_TRANSITION_TIME);
       } else {
@@ -389,9 +405,11 @@ function Game({
             const getsAnotherTurn = (diceNumber === 6 && activePlayer!.numberOfConsecutiveSix < 3) || isCaptured || hasTokenReachedHome;
             const nextColour = getsAnotherTurn ? localColor : getNextTurnColour(localColor, pSeq);
             socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
+            transitionTurn(nextColour);
           } else {
             const nextColour = getNextTurnColour(localColor, pSeq);
             socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: colorMap[nextColour] }));
+            transitionTurn(nextColour);
           }
         }
       }
@@ -432,8 +450,7 @@ function Game({
       } else if (opCode === 2) {
         handleTurnUpdate(parsed);
       } else if (opCode === 3) {
-        // Dice roll request — in relay matches, the host handles this (server doesn't run)
-        // Check if I'm the "host" (lowest session_id alphabetically)
+        // Dice roll request from peer — in relay matches, the host handles this
         if (matchedUsers && matchedUsers.length > 0) {
           const mySessionId = localSessionId || myPlayerId || '';
           const allSessionIds = matchedUsers.map(u => u.presence.session_id).sort();
@@ -446,26 +463,39 @@ function Game({
             );
             if (currentPlayer) {
               const roll = Math.floor(Math.random() * 6) + 1;
-              const rollPayload = JSON.stringify({
-                playerId: currentPlayer.id,
-                playerUserId: currentPlayer.userId,
+              const rollPayloadObj = {
+                playerId: currentPlayer.id || '',
+                playerUserId: currentPlayer.userId || undefined,
                 roll
-              });
+              };
+              const rollPayload = JSON.stringify(rollPayloadObj);
               socket.sendMatchState(currentRoomId, 8, rollPayload);
+              handleDiceRolled(rollPayloadObj);
             }
           }
         }
+      } else if (opCode === 6) {
+        // Relay turn update from peer
+        transitionTurn(parsed.nextTurnColour);
       } else if (opCode === 8) {
         handleDiceRolled(parsed);
       } else if (opCode === 5) {
         handleTokenMoved(parsed);
+      } else if (opCode === 7) {
+        // Relay exit / forfeit directly from peer
+        const session_id = result.presence?.session_id;
+        if (session_id) {
+          const exitingPlayer = store.getState().players.players.find(p => p.id === session_id);
+          if (exitingPlayer) {
+            handleMatchForfeited({ winnerColor: myPlayerColourRef.current, loserColor: exitingPlayer.colour });
+          }
+        }
       } else if (opCode === 9) {
         handlePlayerDisconnected(parsed);
       } else if (opCode === 10) {
         handleMatchForfeited(parsed);
       } else if (opCode === 98) {
         // Request Init Data (Relay Match fallback)
-        // If I am the host and have the players list, send it to the requesting player
         const mySessionId = localSessionId || myPlayerId || '';
         if (matchedUsers && matchedUsers.length > 0) {
           const allSessionIds = matchedUsers.map(u => u.presence.session_id).sort();
@@ -498,13 +528,11 @@ function Game({
       if (matchJoinedRef.current) return;
       matchJoinedRef.current = true;
       try {
-        // Ensure socket is alive before joining (it may have briefly dropped during React navigation)
         const liveSocket = await ensureSocketConnected();
         console.log("Attempting to join match. matchId:", matchId, "matchedToken:", matchedToken ? 'present' : 'missing');
         let match;
 
         if (matchId) {
-          // Authoritative match — join via match_id
           console.log("Joining via matchId:", matchId);
           try {
             match = await liveSocket.joinMatch(matchId);
@@ -517,7 +545,6 @@ function Game({
             }
           }
         } else if (matchedToken) {
-          // Relay match — join via token (when server's matchmakerMatched returns void)
           console.log("Joining via relay token");
           match = await liveSocket.joinMatch(undefined, matchedToken);
         } else {
@@ -531,10 +558,6 @@ function Game({
         const mySessionId = match.self?.session_id || '';
         if (mySessionId) setLocalSessionId(mySessionId);
 
-        // --- Relay match host initialization ---
-        // When server fails to create authoritative match, we get a relay match.
-        // The "host" (first session_id alphabetically) must send OpCode 1 to
-        // initialize game state for all players, mimicking server behavior.
         if ((!matchId || match.match_id !== matchId) && matchedToken && matchedUsers && matchedUsers.length > 0) {
           const allSessionIds = matchedUsers.map(u => u.presence.session_id).sort();
           const amHost = allSessionIds[0] === mySessionId;
@@ -552,7 +575,6 @@ function Game({
               color: colors[idx]
             }));
 
-            // Wait 1.5s to ensure both clients have joined and registered their handlers
             setTimeout(() => {
               const initPayload = JSON.stringify({ players, roomId: joinedMatchId });
               console.log("Host sending relay OpCode 1:", initPayload);
@@ -560,7 +582,6 @@ function Game({
               initializeGame(players);
             }, 1500);
           } else {
-            // Non-host sends a request immediately after joining
             const sendRequest = () => {
               console.log("Non-host sending OpCode 98 request to initialize match...");
               try {
@@ -570,10 +591,8 @@ function Game({
               }
             };
             
-            // Send request immediately
             sendRequest();
             
-            // Also try again after 3 seconds if we still haven't joined
             requestInterval = setInterval(() => {
               if (playersRegisteredInitiallyRef.current) {
                 sendRequest();
@@ -640,8 +659,15 @@ function Game({
     );
   }
 
+  // Determine if the local player is the host (lowest session_id alphabetically)
+  const amHostValue = useMemo(() => {
+    if (!matchedUsers || matchedUsers.length === 0) return false;
+    const allSessionIds = matchedUsers.map(u => u.presence.session_id).sort();
+    return allSessionIds[0] === (localSessionId || myPlayerId || '');
+  }, [matchedUsers, localSessionId, myPlayerId]);
+
   return (
-    <OnlineGameContext.Provider value={isOnline ? { isOnline: true, roomId, myPlayerColour } : null}>
+    <OnlineGameContext.Provider value={isOnline ? { isOnline: true, roomId, myPlayerColour, amHost: amHostValue } : null}>
       <div
         className={styles.game}
         style={

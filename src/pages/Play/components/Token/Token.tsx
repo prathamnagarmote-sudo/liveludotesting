@@ -86,24 +86,30 @@ function Token({ colour, id, tokenClickData }: Props) {
 
     if (newTokenClickData.colour === colour && newTokenClickData.id === id) {
       if (onlineContext?.isOnline) {
-        getNakamaSocket().sendMatchState(onlineContext.roomId, 4, JSON.stringify({
-          tokenId: id,
+        getNakamaSocket().sendMatchState(onlineContext.roomId, 5, JSON.stringify({
+          colour,
+          id,
           isUnlock: isLocked
         }));
+        if (isLocked && isActive && diceNumber !== -1 && diceNumber) unlock();
+        executeTokenMove();
       } else {
         executeTokenMove();
       }
     }
-  }, [colour, executeTokenMove, id, tokenClickData, onlineContext, isLocked]);
+  }, [colour, executeTokenMove, id, tokenClickData, onlineContext, isLocked, isActive, diceNumber]);
 
   const handleTokenClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
     e.stopPropagation();
     tokenElRef.current?.blur?.();
     if (onlineContext?.isOnline) {
-      getNakamaSocket().sendMatchState(onlineContext.roomId, 4, JSON.stringify({
-        tokenId: id,
+      getNakamaSocket().sendMatchState(onlineContext.roomId, 5, JSON.stringify({
+        colour,
+        id,
         isUnlock: isLocked
       }));
+      if (isLocked && isActive && diceNumber !== -1 && diceNumber) unlock();
+      executeTokenMove();
     } else {
       if (isLocked && isActive && diceNumber !== -1 && diceNumber) unlock();
       executeTokenMove();
