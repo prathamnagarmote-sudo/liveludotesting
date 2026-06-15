@@ -57,7 +57,7 @@ type Props = {
   matchId?: string;
   matchedUsers?: Array<{
     presence: { user_id: string; session_id: string; username: string };
-    string_properties?: { avatarUrl?: string; avatar_url?: string; level?: string };
+    string_properties?: { avatarUrl?: string; avatar_url?: string; level?: string; name?: string; userName?: string };
   }>;
   myPlayerId?: string;
   myUserId?: string;
@@ -349,7 +349,7 @@ function Game({
           setTimeout(() => {
             const nextColour = getNextTurnColour(colour, pSeq);
             socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
-          }, 1500);
+          }, 400);
           return;
         }
 
@@ -361,11 +361,11 @@ function Game({
             setTimeout(() => {
               const nextColour = getNextTurnColour(colour, pSeq);
               socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
-            }, 1500);
+            }, 400);
           } else {
             setTimeout(() => {
               socket.sendMatchState(currentRoomId, 5, JSON.stringify({ colour, id: bestToken.id, isUnlock: bestToken.isLocked }));
-            }, 1500);
+            }, 400);
           }
           return;
         }
@@ -379,13 +379,13 @@ function Game({
           setTimeout(() => {
             const nextColour = getNextTurnColour(colour, pSeq);
             socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
-          }, 1500);
+          }, 400);
         } else if (movableTokens.length === 1 && areAllTokensInSameCoord(movableTokens)) {
           // Only one choice → auto-move it
           const token = movableTokens[0];
           setTimeout(() => {
             socket.sendMatchState(currentRoomId, 5, JSON.stringify({ colour, id: token.id, isUnlock: token.isLocked }));
-          }, 400);
+          }, 100);
         } else {
           // Multiple choices → activate tokens on ALL clients via broadcast
           // We broadcast OpCode 11 to activate tokens on all clients
@@ -583,7 +583,7 @@ function Game({
           const players = matchedUsers!.map((u, idx) => ({
             id: u.presence.session_id,
             userId: u.presence.user_id,
-            name: u.presence.username || ('Player ' + (idx + 1)),
+            name: u.string_properties?.name || u.string_properties?.userName || u.presence.username || ('Player ' + (idx + 1)),
             isBot: false,
             avatarUrl: u.string_properties?.avatarUrl || u.string_properties?.avatar_url || '',
             level: parseInt(u.string_properties?.level || '1'),
@@ -638,7 +638,7 @@ function Game({
             const players = matchedUsers.map((u, idx) => ({
               id: u.presence.session_id,
               userId: u.presence.user_id,
-              name: u.presence.username || ('Player ' + (idx + 1)),
+              name: u.string_properties?.name || u.string_properties?.userName || u.presence.username || ('Player ' + (idx + 1)),
               isBot: false,
               avatarUrl: u.string_properties?.avatarUrl || u.string_properties?.avatar_url || '',
               level: parseInt(u.string_properties?.level || '1'),

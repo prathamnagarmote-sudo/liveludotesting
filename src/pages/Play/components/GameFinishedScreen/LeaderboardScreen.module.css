@@ -182,3 +182,68 @@
   text-shadow: none;
   font-family: 'Jua', sans-serif;
 }
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 1.6rem;
+    margin-bottom: 0.2rem;
+  }
+  .winnerSection {
+    margin-bottom: 1rem;
+  }
+  .crown {
+    width: 45px;
+  }
+  .winnerAvatarContainer {
+    width: 75px;
+    height: 75px;
+  }
+  .winnerName {
+    font-size: 1rem;
+  }
+  .winnerScore {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+  .tableCard {
+    padding: 12px 12px 15px;
+    border-radius: 20px 20px 12px 12px;
+  }
+  .tableHeader {
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+  }
+  .tableBody {
+    gap: 8px;
+  }
+  .rowAvatar {
+    width: 32px;
+    height: 32px;
+  }
+  .rowName {
+    font-size: 1rem;
+  }
+  .nameCol {
+    margin-left: 20px; /* Reduced from 70px to fit on small screens */
+    gap: 8px;
+  }
+  .rankCol {
+    width: 25px;
+    font-size: 1rem;
+  }
+  .scoreCol {
+    font-size: 1rem;
+    width: 40px;
+  }
+  .buttonGroup {
+    gap: 15px; /* Reduced from 40px */
+    margin-top: 15px;
+  }
+  .actionButton img {
+    width: 110px; /* Reduced from 140px */
+  }
+  .btnText {
+    font-size: 1rem; /* Reduced from 1.3rem */
+  }
+}

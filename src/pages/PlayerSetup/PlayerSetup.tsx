@@ -172,7 +172,10 @@ function PlayerSetup() {
           const opponent = matched.users.find(
             (u) => u.presence.session_id !== matched.self.presence.session_id
           );
-          const opName = opponent?.presence.username || "Opponent";
+          const opName = opponent?.string_properties?.name || 
+                         opponent?.string_properties?.userName || 
+                         opponent?.presence.username || 
+                         "Opponent";
           const opAvatar = opponent?.string_properties?.avatarurl || 
                            opponent?.string_properties?.avatarUrl || 
                            opponent?.string_properties?.avatar_url || 
@@ -218,6 +221,8 @@ function PlayerSetup() {
           2,
           {
             matchSize: '2',
+            name: currentUser?.userName || '',
+            userName: currentUser?.userName || '',
             avatarUrl: currentUser?.avatar_url || '',
             avatar_url: currentUser?.avatar_url || '',
             level: (currentUser?.user_level || 1).toString()
