@@ -228,13 +228,14 @@ function Game({
         const fakeMatchData = {
           match_id: matchId,
           op_code: opCode,
-          data: new TextEncoder().encode(data),
+          data: typeof data === 'string' ? new TextEncoder().encode(data) : data,
           presence: {
             session_id: getEffectivePlayerId(),
             user_id: myUserId || '',
             username: '',
+            node: '',
           }
-        };
+        } as any;
         setTimeout(() => {
           if (socket.onmatchdata) {
             console.log(`[LOCAL-LOOPBACK] Simulating match data event for OpCode ${opCode}`);
