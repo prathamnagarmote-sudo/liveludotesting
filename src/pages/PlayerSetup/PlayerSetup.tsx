@@ -158,32 +158,12 @@ function PlayerSetup() {
           console.log("matched.ticket:", matched.ticket);
           console.log("Full matched object:", JSON.stringify(matched));
 
-          // Nakama JS SDK converts snake_case to camelCase, so try both
-          // Also decode the JWT token to extract the match_id from the payload ('mid' field)
-          const extractMatchIdFromToken = (token: string): string | undefined => {
-            try {
-              const base64Url = token.split('.')[1];
-              if (!base64Url) return undefined;
-              let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-              while (base64.length % 4) {
-                base64 += '=';
-              }
-              const payload = JSON.parse(atob(base64));
-              console.log("JWT payload:", payload);
-              // Nakama puts match_id as 'mid' in the token payload. Return exactly as-is.
-              return payload.mid as string;
-            } catch (e) {
-              console.error("Failed to decode token for matchId:", e);
-              return undefined;
-            }
-          };
-
-          // Try every possible location for the match_id
+          // Try every possible location for the match_id.
+          // If the SDK did not return a match_id, this is a relay match. Do not extract matchId from token!
           const resolvedMatchId: string =
             matched.match_id ||
             (matched as any).matchId ||
             (matched as any).match_id ||
-            (matched.token ? extractMatchIdFromToken(matched.token) : undefined) ||
             '';
 
           console.log("=== RESOLVED matchId:", resolvedMatchId, "===");
