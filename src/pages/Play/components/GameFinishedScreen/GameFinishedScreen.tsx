@@ -8,7 +8,6 @@ import styles from './GameFinishedScreen.module.css';
 import ResultSplashScreen from './ResultSplashScreen';
 import LeaderboardScreen from './LeaderboardScreen';
 import { useState, useEffect, useContext } from 'react';
-
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { OnlineGameContext } from '../Game/Game';

@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState, useContext } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useContext } from 'react';
 import { deactivateAllTokens, setIsAnyTokenMoving } from '../../../../state/slices/playersSlice';
-import { type TPlayer, type TPlayerColour, type TTokenClickData } from '../../../../types';
+import { type TPlayerColour, type TTokenClickData } from '../../../../types';
 import { type TToken } from '../../../../types';
 import { useDispatch, useSelector } from 'react-redux';
 import { OnlineGameContext } from '../Game/Game';
@@ -35,15 +35,15 @@ type Props = {
 function Token({ colour, id, tokenClickData }: Props) {
   const dispatch = useDispatch<AppDispatch>();
   const { tokenHeight, tokenWidth } = useSelector((state: RootState) => state.board);
-  const { players } = useSelector((state: RootState) => state.players);
+  const token = useSelector((state: RootState) =>
+    state.players.players.find((p) => p.colour === colour)?.tokens.find((t) => t.id === id)
+  ) as TToken;
+  const numberOfConsecutiveSix = useSelector((state: RootState) =>
+    state.players.players.find((p) => p.colour === colour)?.numberOfConsecutiveSix ?? 0
+  );
   const tokenClickDataRef = useRef(tokenClickData);
   const [isCurrentlyFocused, setIsCurrentlyFocused] = useState(false);
   const tokenElRef = useRef<HTMLButtonElement | null>(null);
-  const { numberOfConsecutiveSix, tokens: playerTokens } = useMemo(
-    () => players.find((v) => v.colour === colour),
-    [players, colour]
-  ) as TPlayer;
-  const token = useMemo(() => playerTokens.find((t) => t.id === id), [playerTokens, id]) as TToken;
 
   const { coordinates, isActive, isLocked, tokenAlignmentData } = token;
 
@@ -160,5 +160,5 @@ function Token({ colour, id, tokenClickData }: Props) {
   );
 }
 
-export default Token;
+export default React.memo(Token);
 
