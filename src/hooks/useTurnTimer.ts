@@ -127,23 +127,56 @@ export function useTurnTimer(
         // Time is up! Skip turn and increment missed turns
         dispatch(incrementMissedTurns(colour));
         if (onlineContext?.isOnline) {
-          // Only the player whose turn it is broadcasts the turn skip via OpCode 6.
+          // Only the player whose turn it is handles the turn skip and potential forfeit.
           if (colour === onlineContext.myPlayerColour) {
             try {
               const freshState = store.getState();
               const pSeq = freshState.players.playerSequence;
               const nextColour = getNextTurnColour(colour, pSeq);
-              getNakamaSocket().sendMatchState(
-                onlineContext.roomId,
-                6,
-                JSON.stringify({ nextTurnColour: nextColour })
-              );
-              dispatch(setCurrentPlayerColour(nextColour));
-              dispatch(deactivateAllTokens(nextColour));
+              const missedCount = freshState.players.players.find(p => p.colour === colour)?.missedTurns ?? 0;
+
+              if (missedCount >= 3) {
+                // Player has missed 3 turns — they forfeit. Host broadcasts the forfeit.
+                if (onlineContext.amHost) {
+                  // Find the other player(s) as winners
+                  const otherPlayer = freshState.players.players.find(p => p.colour !== colour && !p.hasQuit);
+                  if (otherPlayer) {
+                    getNakamaSocket().sendMatchState(
+                      onlineContext.roomId,
+                      10,
+                      JSON.stringify({ winnerColor: otherPlayer.colour, loserColor: colour })
+                    );
+                  }
+                } else {
+                  // Non-host sends an OpCode 7 (quit) so host can broadcast forfeit
+                  getNakamaSocket().sendMatchState(
+                    onlineContext.roomId,
+                    7,
+                    JSON.stringify({ colour })
+                  );
+                }
+              } else {
+                // Normal turn skip
+                getNakamaSocket().sendMatchState(
+                  onlineContext.roomId,
+                  6,
+                  JSON.stringify({ nextTurnColour: nextColour })
+                );
+                dispatch(setCurrentPlayerColour(nextColour));
+                dispatch(deactivateAllTokens(nextColour));
+              }
             } catch (e) {}
           }
         } else {
-          dispatch(changeTurnThunk(moveAndCapture));
+          // Offline: check local missed turns and handle game-over
+          const freshState = store.getState();
+          const missedCount = freshState.players.players.find(p => p.colour === colour)?.missedTurns ?? 0;
+          if (missedCount >= 3) {
+            // End the game locally
+            dispatch({ type: 'players/endGameDueToTimeout' });
+          } else {
+            dispatch(changeTurnThunk(moveAndCapture));
+          }
         }
       }
     };

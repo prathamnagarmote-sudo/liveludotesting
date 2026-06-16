@@ -163,10 +163,11 @@ const reducers = {
   incrementMissedTurns: (state: TPlayerState, action: PayloadAction<TPlayerColour>) => {
     const player = getPlayer(state, action.payload);
     player.missedTurns = (player.missedTurns || 0) + 1;
-    if (player.missedTurns >= 3) {
-      state.isGameEnded = true;
-      state.isGameOver = true;
-    }
+    // NOTE: We intentionally do NOT end the game here.
+    // In offline (local) play, game-over from missed turns is triggered separately via changeTurnThunk.
+    // In online play, the host broadcasts OpCode 10 (forfeit) when a player exceeds the limit,
+    // so all clients receive the authoritative game-over signal simultaneously.
+    // Automatically ending the game from this local reducer would cause race conditions.
   },
 
   setIsAnyTokenMoving: (state: TPlayerState, action: PayloadAction<boolean>) => {

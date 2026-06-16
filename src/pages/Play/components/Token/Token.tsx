@@ -95,8 +95,10 @@ function Token({ colour, id, tokenClickData }: Props) {
             isUnlock: isLocked,
           }));
 
-          // Optimistic local update for the non-host active player to eliminate round-trip delay
-          if (colour === onlineContext.myPlayerColour && !onlineContext.amHost) {
+          // Optimistic local update for ALL players (both host and non-host) to eliminate round-trip delay.
+          // Host will receive the OpCode 9 loopback but skip re-animation since it already animated.
+          // Non-host will receive OpCode 9 from host but also skip since it already animated.
+          if (colour === onlineContext.myPlayerColour) {
             console.log('[OPTIMISTIC] Starting local token movement immediately from board click:', colour, id);
             if (isLocked) unlock();
             else executeTokenMove();
@@ -119,8 +121,10 @@ function Token({ colour, id, tokenClickData }: Props) {
           isUnlock: isLocked,
         }));
 
-        // Optimistic local update for the non-host active player to eliminate round-trip delay
-        if (colour === onlineContext.myPlayerColour && !onlineContext.amHost) {
+        // Optimistic local update for ALL players (both host and non-host) to eliminate round-trip delay.
+        // Host will receive the OpCode 9 loopback but skip re-animation since it already animated.
+        // Non-host will receive OpCode 9 from host but also skip since it already animated.
+        if (colour === onlineContext.myPlayerColour) {
           console.log('[OPTIMISTIC] Starting local token movement immediately from direct click:', colour, id);
           if (isLocked) unlock();
           else executeTokenMove();

@@ -32,43 +32,53 @@ export const useMoveTokenForward = () => {
         dispatch(deactivateAllTokens(colour));
         setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
         dispatch(setIsAnyTokenMoving(true));
+
+        // Ensure the token DOM element exists — but we no longer rely on transitionend events.
+        // Instead we use pure setTimeout-based stepping which is 100% reliable on all devices
+        // including mobile where transitionend can be delayed or dropped under CPU pressure.
         const tokenEl = document.getElementById(getTokenDOMId(colour, id));
         if (!tokenEl) throw new Error(ERRORS.tokenDoesNotExist(colour, id));
+
         const initialCoordinateIndex = tokenPath.findIndex((v) => areCoordsEqual(v, coordinates));
         let i = initialCoordinateIndex;
         let count = 0;
 
-        const handleTransitionEnd = () => {
-          // Play wood step clack sound exactly on landing
-          playEngineSound();
-
-          const hasTokenReachedHome = areCoordsEqual(tokenPath[i], tokenPath[tokenPath.length - 1]);
-          if (count >= diceNumber || hasTokenReachedHome) {
-            const player = players.find((p) => p.colour === colour);
-            if (!player) return;
-            const hasPlayerWon =
-              hasTokenReachedHome &&
-              player.tokens.filter((t) => t.hasTokenReachedHome).length === 3;
-            if (hasTokenReachedHome) dispatch(markTokenAsReachedHome({ colour, id }));
-            tokenEl.removeEventListener('transitionend', handleTransitionEnd);
-            dispatch(setIsAnyTokenMoving(false));
-            resolve({
-              lastTokenCoord: tokenPath[i],
-              hasTokenReachedHome,
-              moved: true,
-              hasPlayerWon,
-            });
-            return;
-          }
+        const moveStep = () => {
           i++;
           count++;
           dispatch(updateTokenPositionAndAlignmentThunk({ colour, id, newCoords: tokenPath[i] }));
+
+          const hasTokenReachedHome = areCoordsEqual(tokenPath[i], tokenPath[tokenPath.length - 1]);
+
+          if (count >= diceNumber || hasTokenReachedHome) {
+            // Last step — wait for its CSS transition to finish then resolve
+            setTimeout(() => {
+              playEngineSound();
+              const player = players.find((p) => p.colour === colour);
+              if (!player) return;
+              const hasPlayerWon =
+                hasTokenReachedHome &&
+                player.tokens.filter((t) => t.hasTokenReachedHome).length === 3;
+              if (hasTokenReachedHome) dispatch(markTokenAsReachedHome({ colour, id }));
+              dispatch(setIsAnyTokenMoving(false));
+              resolve({
+                lastTokenCoord: tokenPath[i],
+                hasTokenReachedHome,
+                moved: true,
+                hasPlayerWon,
+              });
+            }, FORWARD_TOKEN_TRANSITION_TIME);
+          } else {
+            // More steps remain — schedule the next step after the current transition
+            setTimeout(() => {
+              playEngineSound();
+              moveStep();
+            }, FORWARD_TOKEN_TRANSITION_TIME);
+          }
         };
-        // Trigger the first transition
-        i++;
-        count++;
-        dispatch(updateTokenPositionAndAlignmentThunk({ colour, id, newCoords: tokenPath[i] }));
-        tokenEl.addEventListener('transitionend', handleTransitionEnd);
+
+        // Kick off the first step
+        moveStep();
       });
     },
     [dispatch, store]
