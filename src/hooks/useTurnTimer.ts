@@ -4,7 +4,7 @@ import { type RootState } from '../state/store';
 import { type TPlayerColour } from '../types';
 import { changeTurnThunk } from '../state/thunks/changeTurnThunk';
 import { useMoveAndCaptureToken } from './useMoveAndCaptureToken';
-import { incrementMissedTurns } from '../state/slices/playersSlice';
+import { incrementMissedTurns, setCurrentPlayerColour, deactivateAllTokens } from '../state/slices/playersSlice';
 import { OnlineGameContext } from '../pages/Play/components/Game/Game';
 import { getNakamaSocket } from '../services/nakama';
 
@@ -120,6 +120,7 @@ export function useTurnTimer(
         // Time is up! Skip turn and increment missed turns
         dispatch(incrementMissedTurns(colour));
         if (onlineContext?.isOnline) {
+          // Only the player whose turn it is broadcasts the turn skip via OpCode 6.
           if (colour === onlineContext.myPlayerColour) {
             try {
               const freshState = store.getState();
@@ -130,6 +131,8 @@ export function useTurnTimer(
                 6,
                 JSON.stringify({ nextTurnColour: nextColour })
               );
+              dispatch(setCurrentPlayerColour(nextColour));
+              dispatch(deactivateAllTokens(nextColour));
             } catch (e) {}
           }
         } else {

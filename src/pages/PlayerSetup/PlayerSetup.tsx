@@ -158,27 +158,12 @@ function PlayerSetup() {
           console.log("matched.ticket:", matched.ticket);
           console.log("Full matched object:", JSON.stringify(matched));
 
-          // Nakama JS SDK converts snake_case to camelCase, so try both
-          // Also decode the JWT token to extract the match_id from the payload ('mid' field)
-          const extractMatchIdFromToken = (token: string): string | undefined => {
-            try {
-              const payload = JSON.parse(atob(token.split('.')[1]));
-              console.log("JWT payload:", payload);
-              // Nakama puts match_id as 'mid' in the token payload
-              const mid = payload.mid as string;
-              if (mid) return mid.endsWith('.') ? mid.slice(0, -1) + '.nakama' : mid;
-              return undefined;
-            } catch {
-              return undefined;
-            }
-          };
-
-          // Try every possible location for the match_id
+          // Try every possible location for the match_id.
+          // If the SDK did not return a match_id, this is a relay match. Do not extract matchId from token!
           const resolvedMatchId: string =
             matched.match_id ||
             (matched as any).matchId ||
             (matched as any).match_id ||
-            (matched.token ? extractMatchIdFromToken(matched.token) : undefined) ||
             '';
 
           console.log("=== RESOLVED matchId:", resolvedMatchId, "===");
@@ -187,7 +172,10 @@ function PlayerSetup() {
           const opponent = matched.users.find(
             (u) => u.presence.session_id !== matched.self.presence.session_id
           );
-          const opName = opponent?.presence.username || "Opponent";
+          const opName = opponent?.string_properties?.name || 
+                         opponent?.string_properties?.userName || 
+                         opponent?.presence.username || 
+                         "Opponent";
           const opAvatar = opponent?.string_properties?.avatarurl || 
                            opponent?.string_properties?.avatarUrl || 
                            opponent?.string_properties?.avatar_url || 
@@ -233,6 +221,8 @@ function PlayerSetup() {
           2,
           {
             matchSize: '2',
+            name: currentUser?.userName || '',
+            userName: currentUser?.userName || '',
             avatarUrl: currentUser?.avatar_url || '',
             avatar_url: currentUser?.avatar_url || '',
             level: (currentUser?.user_level || 1).toString()

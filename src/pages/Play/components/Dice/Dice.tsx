@@ -55,6 +55,7 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
     () => isAnyTokenActiveOfColour(colour, players),
     [colour, players]
   );
+  const playerObj = players.find((p) => p.colour === colour);
   const isBot = players.find((p) => p.colour === colour)?.isBot;
   const isCurrentPlayer = currentPlayer === colour;
   const isVisualCurrentPlayer = (rollingPlayer || currentPlayer) === colour;
@@ -76,7 +77,19 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
     if (isDiceDisabled) return;
     playDiceRollSound();
     if (onlineContext?.isOnline) {
-      getNakamaSocket().sendMatchState(onlineContext.roomId, 3, "{}");
+      if (onlineContext.amHost) {
+        // Host: generate the roll and broadcast OpCode 8 directly.
+        // All clients (including host itself via relay loopback) apply the result.
+        // Do NOT call rollDiceThunk — wait for OpCode 8 loopback to apply state.
+        const roll = Math.floor(Math.random() * 6) + 1;
+        getNakamaSocket().sendMatchState(onlineContext.roomId, 8, JSON.stringify({
+          colour,
+          roll,
+        }));
+      } else {
+        // Non-host: ask the host to roll for the current player
+        getNakamaSocket().sendMatchState(onlineContext.roomId, 3, '{}');
+      }
     } else {
       dispatch(rollDiceThunk(colour, (diceNumber) => onDiceClick(colour, diceNumber)));
     }
@@ -91,7 +104,6 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleDiceClick, isDiceDisabled]);
 
-  const playerObj = players.find((p) => p.colour === colour);
   const missedTurns = playerObj?.missedTurns ?? 0;
   const avatarUrl = playerObj?.avatarUrl;
   const hasAvatar = !!avatarUrl;

@@ -74,6 +74,7 @@ const reducers = {
       id: action.payload.id,
       userId: action.payload.userId,
       missedTurns: 0,
+      hasQuit: false,
     });
   },
 
@@ -251,6 +252,21 @@ const reducers = {
     // Note: We don't populate playerFinishOrder here because the UI will instead use 
     // getLeaderboardStandings() dynamically from the final state.
   },
+  quitMatch: (state: TPlayerState, action: PayloadAction<TPlayerColour>) => {
+    const player = getPlayer(state, action.payload);
+    player.hasQuit = true;
+    state.playerSequence = state.playerSequence.filter((p) => p !== action.payload);
+    if (state.playerSequence.length === 1) {
+      state.isGameEnded = true;
+    } else if (state.playerSequence.length === 0) {
+      state.isGameEnded = true;
+    }
+  },
+  forceEndGameAsQuit: (state: TPlayerState, action: PayloadAction<TPlayerColour>) => {
+    const player = getPlayer(state, action.payload);
+    player.hasQuit = true;
+    state.isGameEnded = true;
+  },
   clearPlayersState: () => initialState,
 };
 
@@ -280,6 +296,8 @@ export const {
   setCurrentPlayerColour,
   declareForfeit,
   endGameDueToTimeout,
+  quitMatch,
+  forceEndGameAsQuit,
   clearPlayersState,
 } = playersSlice.actions;
 

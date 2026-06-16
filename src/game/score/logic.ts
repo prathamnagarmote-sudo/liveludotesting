@@ -34,28 +34,43 @@ export type TLeaderboardStanding = {
   colour: TPlayerColour;
   score: number;
   isBot: boolean;
+  hasQuit: boolean;
+  avatarUrl?: string;
 };
 
 /**
  * Ranks all players based on their current score (highest to lowest).
  */
 export function getLeaderboardStandings(players: TPlayer[]): TLeaderboardStanding[] {
-  const standings = players.map(player => ({
+  const standings = players.map((player) => ({
     name: player.name,
     colour: player.colour,
-    score: getPlayerScore(player),
+    score: getPlayerScore(player), // Display actual score even if quit
     isBot: player.isBot,
+    hasQuit: player.hasQuit,
+    avatarUrl: player.avatarUrl,
   }));
 
-  // Sort descending by score
-  standings.sort((a, b) => b.score - a.score);
+  // Sort descending by score, but force quit players to the absolute bottom
+  standings.sort((a, b) => {
+    if (a.hasQuit && !b.hasQuit) return 1;
+    if (!a.hasQuit && b.hasQuit) return -1;
+    return b.score - a.score;
+  });
 
   // Assign ranks
   let currentRank = 1;
   return standings.map((standing, index) => {
+    if (standing.hasQuit) {
+      return {
+        ...standing,
+        rank: players.length,
+      };
+    }
     if (index > 0 && standing.score < standings[index - 1].score) {
       currentRank = index + 1;
     }
+    
     return {
       ...standing,
       rank: currentRank,

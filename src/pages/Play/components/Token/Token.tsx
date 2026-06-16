@@ -9,10 +9,10 @@ import type { AppDispatch, RootState } from '../../../../state/store';
 import TokenImage from '../../../../assets/token.svg?react';
 import { useCoordsToPosition } from '../../../../hooks/useCoordsToPosition';
 import { setTokenTransitionTime } from '../../../../utils/setTokenTransitionTime';
-import { changeTurnThunk } from '../../../../state/thunks/changeTurnThunk';
 import { useMoveAndCaptureToken } from '../../../../hooks/useMoveAndCaptureToken';
 import { unlockAndAlignTokens } from '../../../../state/thunks/unlockAndAlignTokens';
 import { FORWARD_TOKEN_TRANSITION_TIME } from '../../../../game/tokens/constants';
+import { changeTurnThunk } from '../../../../state/thunks/changeTurnThunk';
 import styles from './Token.module.css';
 import clsx from 'clsx';
 import { getTokenDOMId } from '../../../../game/tokens/logic';
@@ -29,6 +29,8 @@ type Props = {
   id: number;
   tokenClickData: TTokenClickData | null;
 };
+
+
 
 function Token({ colour, id, tokenClickData }: Props) {
   const dispatch = useDispatch<AppDispatch>();
@@ -86,24 +88,37 @@ function Token({ colour, id, tokenClickData }: Props) {
 
     if (newTokenClickData.colour === colour && newTokenClickData.id === id) {
       if (onlineContext?.isOnline) {
-        getNakamaSocket().sendMatchState(onlineContext.roomId, 4, JSON.stringify({
-          tokenId: id,
-          isUnlock: isLocked
-        }));
+        // Online mode: ONLY send OpCode 5 (move request) to the host.
+        // The host executes all game logic (move, capture, turn) and broadcasts
+        // authoritative results via OpCode 9 (move result) + OpCode 6 (turn change).
+        // Do NOT call moveAndCapture locally — that causes double moves.
+        if (isActive && diceNumber !== -1 && diceNumber) {
+          getNakamaSocket().sendMatchState(onlineContext.roomId, 5, JSON.stringify({
+            colour,
+            id,
+            isUnlock: isLocked,
+          }));
+        }
       } else {
         executeTokenMove();
       }
     }
-  }, [colour, executeTokenMove, id, tokenClickData, onlineContext, isLocked]);
+  }, [colour, executeTokenMove, id, tokenClickData, onlineContext, isLocked, isActive, diceNumber]);
 
   const handleTokenClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
     e.stopPropagation();
     tokenElRef.current?.blur?.();
     if (onlineContext?.isOnline) {
-      getNakamaSocket().sendMatchState(onlineContext.roomId, 4, JSON.stringify({
-        tokenId: id,
-        isUnlock: isLocked
-      }));
+      // Online mode: ONLY send OpCode 5 (move request) to the host.
+      // The useEffect above already handles sending OpCode 5 when tokenClickData changes,
+      // but this direct click handler ensures we also cover direct click events.
+      if (isActive && diceNumber !== -1 && diceNumber) {
+        getNakamaSocket().sendMatchState(onlineContext.roomId, 5, JSON.stringify({
+          colour,
+          id,
+          isUnlock: isLocked,
+        }));
+      }
     } else {
       if (isLocked && isActive && diceNumber !== -1 && diceNumber) unlock();
       executeTokenMove();
