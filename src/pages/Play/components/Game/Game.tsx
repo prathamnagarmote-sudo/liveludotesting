@@ -491,6 +491,12 @@ function Game({
       const token = player.tokens.find(t => t.id === data.id);
       if (!token) return;
 
+      // Optimistic check: if we are not the host, and it's our own token, we already animated it locally when clicking!
+      if (!amHost && colour === myPlayerColourRef.current) {
+        console.log('[OPTIMISTIC] Skipping animation of our own token move since we already ran it.');
+        return;
+      }
+
       const diceNumber = state.dice.dice.find(d => d.colour === colour)?.diceNumber || 1;
       console.log('[ALL] Applying token move result:', colour, data.id, 'amHost:', amHost);
 

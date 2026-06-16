@@ -88,16 +88,19 @@ function Token({ colour, id, tokenClickData }: Props) {
 
     if (newTokenClickData.colour === colour && newTokenClickData.id === id) {
       if (onlineContext?.isOnline) {
-        // Online mode: ONLY send OpCode 5 (move request) to the host.
-        // The host executes all game logic (move, capture, turn) and broadcasts
-        // authoritative results via OpCode 9 (move result) + OpCode 6 (turn change).
-        // Do NOT call moveAndCapture locally — that causes double moves.
         if (isActive && diceNumber !== -1 && diceNumber) {
           getNakamaSocket().sendMatchState(onlineContext.roomId, 5, JSON.stringify({
             colour,
             id,
             isUnlock: isLocked,
           }));
+
+          // Optimistic local update for the non-host active player to eliminate round-trip delay
+          if (colour === onlineContext.myPlayerColour && !onlineContext.amHost) {
+            console.log('[OPTIMISTIC] Starting local token movement immediately from board click:', colour, id);
+            if (isLocked) unlock();
+            else executeTokenMove();
+          }
         }
       } else {
         executeTokenMove();
@@ -109,15 +112,19 @@ function Token({ colour, id, tokenClickData }: Props) {
     e.stopPropagation();
     tokenElRef.current?.blur?.();
     if (onlineContext?.isOnline) {
-      // Online mode: ONLY send OpCode 5 (move request) to the host.
-      // The useEffect above already handles sending OpCode 5 when tokenClickData changes,
-      // but this direct click handler ensures we also cover direct click events.
       if (isActive && diceNumber !== -1 && diceNumber) {
         getNakamaSocket().sendMatchState(onlineContext.roomId, 5, JSON.stringify({
           colour,
           id,
           isUnlock: isLocked,
         }));
+
+        // Optimistic local update for the non-host active player to eliminate round-trip delay
+        if (colour === onlineContext.myPlayerColour && !onlineContext.amHost) {
+          console.log('[OPTIMISTIC] Starting local token movement immediately from direct click:', colour, id);
+          if (isLocked) unlock();
+          else executeTokenMove();
+        }
       }
     } else {
       if (isLocked && isActive && diceNumber !== -1 && diceNumber) unlock();
