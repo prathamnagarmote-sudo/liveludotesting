@@ -287,7 +287,7 @@ function Game({
 
       const mappedSequence = playersList.map((p: any) => p.color);
       const effectivePlayerId = getEffectivePlayerId();
-      const myMatchPlayer = playersList.find((p: any) => p.userId === myUserId || p.id === effectivePlayerId);
+      const myMatchPlayer = playersList.find((p: any) => p.id === effectivePlayerId) || playersList.find((p: any) => p.userId === myUserId);
       if (myMatchPlayer) {
         setMyPlayerColour(myMatchPlayer.color);
         myPlayerColourRef.current = myMatchPlayer.color;
@@ -547,6 +547,11 @@ function Game({
       const amHost = allSessionIds.length > 0 && allSessionIds[0] === mySessionId;
 
       console.log(`[SOCKET] OpCode ${opCode}`, parsed);
+
+      if (opCode >= 101 && opCode <= 103) {
+        document.dispatchEvent(new CustomEvent('nakama-rematch-event', { detail: { opCode, parsed } }));
+        return;
+      }
 
       if (opCode === 1) {
         // Init Match Data — host (or fallback via OpCode 98) sends player list

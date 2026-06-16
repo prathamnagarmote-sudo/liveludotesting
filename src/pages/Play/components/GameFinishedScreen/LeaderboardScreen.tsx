@@ -16,6 +16,7 @@ import TokenImage from '../../../../assets/token.svg?react';
 type Props = {
   standings: TLeaderboardStanding[];
   isTie?: boolean;
+  onRequestRematch?: () => void;
 };
 
 const woodStainColours: Record<string, string> = {
@@ -25,17 +26,20 @@ const woodStainColours: Record<string, string> = {
   yellow: '#c28b17',
 };
 
-function LeaderboardScreen({ standings, isTie }: Props) {
+function LeaderboardScreen({ standings, isTie, onRequestRematch }: Props) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   
   const winner = standings[0];
 
   const handleRematch = () => {
-    // Navigate setup or reset match
-    dispatch(clearPlayersState());
-    dispatch(clearDiceState());
-    navigate('/setup'); // Navigating to setup for rematch for now
+    if (onRequestRematch) {
+      onRequestRematch();
+    } else {
+      dispatch(clearPlayersState());
+      dispatch(clearDiceState());
+      navigate('/setup');
+    }
   };
 
   return (

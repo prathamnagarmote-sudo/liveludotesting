@@ -118,5 +118,93 @@
   letter-spacing: 2px;
   text-align: center;
 }
+.rematchOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+  flex-direction: column;
+}
 
+.rematchPopup {
+  background: #4A0E78;
+  border-radius: 20px;
+  padding: 30px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 2px solid #FFD700;
+}
 
+.rematchTitle {
+  color: #FFD700;
+  font-size: 2rem;
+  margin-bottom: 15px;
+  margin-top: 0;
+}
+
+.rematchText {
+  color: white;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+.rematchTimer {
+  color: #FFD700;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.rematchBtnGroup {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.acceptBtn, .rejectBtn {
+  padding: 10px 25px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: 'Jua', sans-serif;
+  transition: transform 0.2s ease;
+}
+
+.acceptBtn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.rejectBtn {
+  background-color: #F44336;
+  color: white;
+}
+
+.acceptBtn:hover, .rejectBtn:hover {
+  transform: scale(1.05);
+}
+
+.countdownText {
+  color: #FFD700;
+  font-size: 8rem;
+  font-weight: bold;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+}
+
+.statusMessage {
+  color: #FFD700;
+  font-size: 1.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px 30px;
+  border-radius: 15px;
+  border: 1px solid #FFD700;
+}
