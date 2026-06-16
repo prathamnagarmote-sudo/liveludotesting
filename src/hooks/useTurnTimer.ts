@@ -117,6 +117,13 @@ export function useTurnTimer(
       if (MathRemaining > 0) {
         requestRef.current = requestAnimationFrame(updateTimer);
       } else {
+        // Time is up! Reset start time ref first to prevent re-entrant loops
+        startTimeRef.current = undefined;
+        if (requestRef.current !== undefined) {
+          cancelAnimationFrame(requestRef.current);
+          requestRef.current = undefined;
+        }
+
         // Time is up! Skip turn and increment missed turns
         dispatch(incrementMissedTurns(colour));
         if (onlineContext?.isOnline) {
