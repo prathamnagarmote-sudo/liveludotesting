@@ -218,7 +218,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 4px;
   width: 100%;
   margin-top: calc(var(--board-tile-size) * 0.12);
 }
@@ -253,7 +253,7 @@
   letter-spacing: 0.5px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   line-height: 1;
-  transform: translateY(-6px);
+  transform: translateY(-3px);
 }
 
 .badgeYou {
@@ -693,7 +693,7 @@
 /* Adjust translateY for score when placed above name */
 .red .playerScore,
 .green .playerScore {
-  transform: translateY(4px);
+  transform: translateY(3px);
   margin-bottom: 2px;
 }
 

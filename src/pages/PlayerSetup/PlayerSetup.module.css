@@ -527,56 +527,100 @@
   object-fit: contain;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
   animation: vsHeroEntry 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, vsPulse 2s infinite ease-in-out 0.8s;
+  position: relative;
+  z-index: 5; /* Render in front of the vsAfterEffect */
+}
+
+/* Flash for the VS image when match is found */
+.vsFlash {
+  animation: vsLightningFlash 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+}
+
+@keyframes vsLightningFlash {
+  0% { filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6)) brightness(1); transform: scale(1) rotate(0deg); }
+  25% { filter: drop-shadow(0 0 20px #ffffff) brightness(2); transform: scale(1.05) rotate(0deg); }
+  50% { filter: drop-shadow(0 0 40px #ffffff) brightness(3.5); transform: scale(1.1) rotate(0deg); }
+  65% { filter: drop-shadow(0 0 50px #00ffff) drop-shadow(0 0 20px #ffffff) brightness(2.8); transform: scale(1.2) rotate(10deg); }
+  85% { filter: drop-shadow(0 0 30px #00ffff) brightness(1.5); transform: scale(1.05) rotate(-5deg); }
+  100% { filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6)) brightness(1); transform: scale(1) rotate(0deg); }
 }
 
 .vsAfterEffect {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 320px; /* Fixed size to prevent browser scaling percentage desyncs */
+  width: 110px; /* Decreased size further */
   height: auto;
   object-fit: contain;
   transform: translate(-50%, -50%) scale(0);
   pointer-events: none;
-  z-index: 4;
-  animation: vsAfterEffectTimeline 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  z-index: 4; /* Render behind the VS image */
+  animation: vsAfterEffectTimeline 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; 
 }
 
 @keyframes vsAfterEffectTimeline {
   0% {
-    transform: translate(-50%, -50%) scale(8);
+    transform: translate(-50%, -50%) scale(3.5);
     opacity: 0;
-    filter: drop-shadow(0 0 35px rgba(0, 191, 255, 1)) brightness(2.5);
+    filter: drop-shadow(0 0 35px rgba(0, 191, 255, 1)) brightness(3);
   }
-  10% {
-    transform: translate(-50%, -50%) scale(7);
+  15% {
     opacity: 1;
-    filter: drop-shadow(0 0 35px rgba(0, 191, 255, 1)) brightness(2.2);
+    filter: drop-shadow(0 0 30px rgba(0, 191, 255, 1)) brightness(2.5);
   }
-  40% {
-    transform: translate(-50%, -50%) scale(4);
+  50% {
+    /* Lightning flash sync, scale naturally interpolates here */
+    transform: translate(-50%, -50%) scale(1.5);
     opacity: 1;
-    filter: drop-shadow(0 0 30px rgba(162, 59, 235, 0.9)) brightness(1.8);
+    filter: drop-shadow(0 0 40px rgba(255, 255, 255, 1)) brightness(3.5);
   }
-  70% {
-    transform: translate(-50%, -50%) scale(1.3);
-    opacity: 1;
-    filter: drop-shadow(0 0 15px rgba(162, 59, 235, 0.8)) brightness(1.2);
-  }
-  80% {
-    transform: translate(-50%, -50%) scale(1.6);
-    opacity: 1;
-    filter: drop-shadow(0 0 30px rgba(255, 255, 255, 1)) brightness(2.8);
-  }
-  95% {
-    transform: translate(-50%, -50%) scale(1.3);
+  85% {
     opacity: 1;
     filter: drop-shadow(0 0 10px rgba(162, 59, 235, 0.6)) brightness(1);
   }
   100% {
-    transform: translate(-50%, -50%) scale(1.3);
+    transform: translate(-50%, -50%) scale(0);
     opacity: 0;
-    filter: drop-shadow(0 0 10px rgba(162, 59, 235, 0.6)) brightness(1);
+    filter: drop-shadow(0 0 0px rgba(162, 59, 235, 0)) brightness(1);
+  }
+}
+
+.vsSparkLine {
+  position: absolute;
+  top: 50%;
+  left: 48%; /* Slightly shifted left to sit precisely between V and S */
+  width: 90px;
+  height: 6px; /* Slightly broader */
+  background: radial-gradient(ellipse at center, #ffffff 20%, #00e5ff 60%, transparent 100%); /* White highlight in the middle */
+  border-radius: 50%; /* Tapered ends for a natural spark look */
+  box-shadow: 0 0 15px #ffffff, 0 0 35px #00ffff, 0 0 50px #00ffff;
+  opacity: 0;
+  z-index: 10; /* Render above VS logo */
+  transform: translate(-50%, -50%) rotate(-55deg) scale(0); /* Adjusted angle to slice between V and S */
+  animation: sparkLineAnim 1.2s cubic-bezier(0.1, 1, 0.2, 1) forwards; /* Snappier easing */
+}
+
+@keyframes sparkLineAnim {
+  0%, 60% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-55deg) scale(0);
+  }
+  65% {
+    /* Sudden spark effect (appears significantly slower and spans longer) */
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-55deg) scale(1.3);
+    filter: brightness(2.5);
+  }
+  85% {
+    /* Settle slowly */
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-55deg) scale(1);
+    filter: brightness(1.5);
+  }
+  100% {
+    /* Fades out slowly */
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-55deg) scale(0);
   }
 }
 
