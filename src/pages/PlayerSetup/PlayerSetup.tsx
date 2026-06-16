@@ -329,9 +329,12 @@ function PlayerSetup() {
           {isSearching && (
             <>
               <div className={styles.vsContainer}>
-                <img src={vsImg} alt="VS" className={styles.vsImage} />
+                <img src={vsImg} alt="VS" className={`${styles.vsImage} ${matchFound ? styles.vsFlash : ''}`} />
                 {matchFound && (
-                  <img src={vsAfterEffectImg} alt="VS Effect" className={styles.vsAfterEffect} />
+                  <>
+                    <img src={vsAfterEffectImg} alt="VS Effect" className={styles.vsAfterEffect} />
+                    <div className={styles.vsSparkLine} />
+                  </>
                 )}
               </div>
 

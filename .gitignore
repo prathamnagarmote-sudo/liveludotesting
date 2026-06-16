@@ -28,3 +28,4 @@ dist-ssr
 # Cloudflare
 .wrangler/
 .dev.vars
+.vercel

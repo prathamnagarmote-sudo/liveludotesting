@@ -67,7 +67,9 @@ function Token({ colour, id, tokenClickData }: Props) {
     }, FORWARD_TOKEN_TRANSITION_TIME);
   };
 
-  const executeTokenMove = useCallback(async () => {
+  // OFFLINE-only: full token move including post-move turn change logic.
+  // In ONLINE mode, turn changes come EXCLUSIVELY from OpCode 6 — never from local logic.
+  const executeTokenMoveOffline = useCallback(async () => {
     if (!isActive || diceNumber === -1 || !diceNumber) return;
 
     const moveData = await moveAndCapture(token, diceNumber);
@@ -79,6 +81,17 @@ function Token({ colour, id, tokenClickData }: Props) {
     }
   }, [diceNumber, dispatch, isActive, moveAndCapture, numberOfConsecutiveSix, token]);
 
+  // ONLINE NON-HOST ONLY: optimistic animation (fire-and-forget).
+  // Runs only the visual animation — no turn change, no game logic.
+  // Turn progression comes from OpCode 6 broadcast by the host.
+  const executeOptimisticAnimation = useCallback(async () => {
+    if (!isActive || diceNumber === -1 || !diceNumber) return;
+    // Fire-and-forget: animate the token move, but do NOT handle the result.
+    // The host will broadcast OpCode 9 (with authoritative isCaptured/hasPlayerWon)
+    // and OpCode 6 (turn change). We just show the animation instantly.
+    await moveAndCapture(token, diceNumber);
+  }, [diceNumber, isActive, moveAndCapture, token]);
+
   useEffect(() => {
     const prevClickData = tokenClickDataRef.current;
     const newTokenClickData = tokenClickData;
@@ -88,40 +101,53 @@ function Token({ colour, id, tokenClickData }: Props) {
 
     if (newTokenClickData.colour === colour && newTokenClickData.id === id) {
       if (onlineContext?.isOnline) {
-        // Online mode: ONLY send OpCode 5 (move request) to the host.
-        // The host executes all game logic (move, capture, turn) and broadcasts
-        // authoritative results via OpCode 9 (move result) + OpCode 6 (turn change).
-        // Do NOT call moveAndCapture locally — that causes double moves.
         if (isActive && diceNumber !== -1 && diceNumber) {
-          getNakamaSocket().sendMatchState(onlineContext.roomId, 5, JSON.stringify({
-            colour,
-            id,
-            isUnlock: isLocked,
-          }));
+          if (colour === onlineContext.myPlayerColour) {
+            onlineContext.optimisticTokenMovesRef?.current.add(`${colour}-${id}`);
+            if (onlineContext.amHost) {
+              onlineContext.onHostTokenMove?.(colour, id, isLocked);
+            } else {
+              getNakamaSocket().sendMatchState(onlineContext.roomId, 5, JSON.stringify({
+                colour,
+                id,
+                isUnlock: isLocked,
+              }));
+            }
+            console.log('[OPTIMISTIC] Animating own token immediately (board click):', colour, id);
+            if (isLocked) unlock();
+            else executeOptimisticAnimation();
+          }
         }
       } else {
-        executeTokenMove();
+        executeTokenMoveOffline();
       }
     }
-  }, [colour, executeTokenMove, id, tokenClickData, onlineContext, isLocked, isActive, diceNumber]);
+  }, [colour, executeTokenMoveOffline, executeOptimisticAnimation, id, tokenClickData, onlineContext, isLocked, isActive, diceNumber]);
 
   const handleTokenClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
     e.stopPropagation();
     tokenElRef.current?.blur?.();
     if (onlineContext?.isOnline) {
-      // Online mode: ONLY send OpCode 5 (move request) to the host.
-      // The useEffect above already handles sending OpCode 5 when tokenClickData changes,
-      // but this direct click handler ensures we also cover direct click events.
       if (isActive && diceNumber !== -1 && diceNumber) {
-        getNakamaSocket().sendMatchState(onlineContext.roomId, 5, JSON.stringify({
-          colour,
-          id,
-          isUnlock: isLocked,
-        }));
+        if (colour === onlineContext.myPlayerColour) {
+          onlineContext.optimisticTokenMovesRef?.current.add(`${colour}-${id}`);
+          if (onlineContext.amHost) {
+            onlineContext.onHostTokenMove?.(colour, id, isLocked);
+          } else {
+            getNakamaSocket().sendMatchState(onlineContext.roomId, 5, JSON.stringify({
+              colour,
+              id,
+              isUnlock: isLocked,
+            }));
+          }
+          console.log('[OPTIMISTIC] Animating own token immediately (direct click):', colour, id);
+          if (isLocked) unlock();
+          else executeOptimisticAnimation();
+        }
       }
     } else {
       if (isLocked && isActive && diceNumber !== -1 && diceNumber) unlock();
-      executeTokenMove();
+      executeTokenMoveOffline();
     }
   };
 
@@ -161,4 +187,3 @@ function Token({ colour, id, tokenClickData }: Props) {
 }
 
 export default React.memo(Token);
-

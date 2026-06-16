@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, createContext, useMemo, useState } from 'react';
+import React, { useEffect, useRef, createContext, useMemo, useState, useCallback } from 'react';
 import {
   registerNewPlayer,
   setPlayerSequence,
@@ -25,7 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import { quitMatchThunk } from '../../../../state/thunks/quitMatchThunk';
 import { playerCountToWord } from '../../../../game/players/logic';
 import { usePageLeaveBlocker } from '../../../../hooks/usePageLeaveBlocker';
-import { addToGameInactiveTime, setGameStartTime, setMatchDuration } from '../../../../state/slices/sessionSlice';
+import { addToGameInactiveTime, setGameStartTime, setMatchDuration, setTimeRemainingMs } from '../../../../state/slices/sessionSlice';
 import { useGameTimer } from '../../../../hooks/useGameTimer';
 import ScoreBoard from '../ScoreBoard/ScoreBoard';
 import styles from './Game.module.css';
@@ -49,6 +49,8 @@ export const OnlineGameContext = createContext<{
   roomId: string;
   myPlayerColour: TPlayerColour;
   amHost: boolean;
+  optimisticTokenMovesRef?: React.MutableRefObject<Set<string>>;
+  onHostTokenMove?: (colour: TPlayerColour, id: number, isUnlock: boolean) => void;
 } | null>(null);
 
 type Props = {
@@ -226,6 +228,71 @@ function Game({
   const myPlayerColourRef = useRef<TPlayerColour>(canonicalColour || 'blue');
   useEffect(() => { myPlayerColourRef.current = myPlayerColour; }, [myPlayerColour]);
 
+  const optimisticTokenMovesRef = useRef<Set<string>>(new Set());
+
+  const onHostTokenMove = useCallback((colour: TPlayerColour, id: number, isUnlock: boolean) => {
+    try {
+      const socket = getNakamaSocket();
+      const currentRoomId = roomIdRef.current;
+      const state = store.getState();
+      const playersList = state.players.players;
+      const player = playersList.find(p => p.colour === colour);
+      if (!player) return;
+      const token = player.tokens.find(t => t.id === id);
+      if (!token) return;
+
+      const diceNumber = state.dice.dice.find(d => d.colour === colour)?.diceNumber || 1;
+
+      console.log('[HOST] Local Host executing and broadcasting token move:', colour, id, 'isUnlock:', isUnlock);
+
+      if (isUnlock) {
+        // Broadcast unlock result to ALL clients immediately
+        socket.sendMatchState(currentRoomId, 9, JSON.stringify({
+          colour,
+          id,
+          isUnlock: true,
+          hasTokenReachedHome: false,
+          isCaptured: false,
+          hasPlayerWon: false,
+          timeRemainingMs: store.getState().session.timeRemainingMs,
+        }));
+
+        // Unlock always gives the same player another turn
+        socket.sendMatchState(currentRoomId, 6, JSON.stringify({
+          nextTurnColour: colour,
+          timeRemainingMs: store.getState().session.timeRemainingMs,
+        }));
+      } else {
+        const { hasTokenReachedHome, isCaptured, hasPlayerWon } = computeMoveResult(token, diceNumber, state);
+
+        // Broadcast move result to ALL clients immediately
+        socket.sendMatchState(currentRoomId, 9, JSON.stringify({
+          colour,
+          id,
+          isUnlock: false,
+          hasTokenReachedHome,
+          isCaptured,
+          hasPlayerWon,
+          timeRemainingMs: store.getState().session.timeRemainingMs,
+        }));
+
+        if (!hasPlayerWon) {
+          const getsAnotherTurn =
+            (diceNumber === 6 && (player.numberOfConsecutiveSix ?? 0) < 3) ||
+            isCaptured ||
+            hasTokenReachedHome;
+          const nextColour = getsAnotherTurn ? colour : getNextTurnColour(colour, playerSequence);
+          socket.sendMatchState(currentRoomId, 6, JSON.stringify({
+            nextTurnColour: nextColour,
+            timeRemainingMs: store.getState().session.timeRemainingMs,
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('[HOST] Failed to resolve and broadcast host token move:', err);
+    }
+  }, [store, playerSequence]);
+
   // Handle Online Match turn coordination
   // ARCHITECTURE: Host-Authoritative Relay
   //   - All game logic (dice, moves, turn changes) executes ONLY on the HOST.
@@ -251,12 +318,10 @@ function Game({
     // but our game architecture assumes all clients (including host/sender) process match state.
     const originalSendMatchState = socket.sendMatchState.bind(socket);
     socket.sendMatchState = async (matchId, opCode, data, presences) => {
-      // Send to other players
-      try {
-        await originalSendMatchState(matchId, opCode, data, presences);
-      } catch (err) {
+      // Send to other players (non-blocking)
+      originalSendMatchState(matchId, opCode, data, presences).catch((err) => {
         console.error(`[SOCKET] sendMatchState error for OpCode ${opCode}:`, err);
-      }
+      });
 
       // Simulate local loopback
       if (socket.onmatchdata) {
@@ -336,6 +401,7 @@ function Game({
       const rollPayload = JSON.stringify({
         colour: currentPlayer.colour,
         roll,
+        timeRemainingMs: store.getState().session.timeRemainingMs,
       });
       console.log('[HOST] Rolling dice for', currentPlayer.colour, '=', roll);
       // Broadcast to ALL clients (including self via relay loopback)
@@ -344,6 +410,7 @@ function Game({
 
     // ─── ALL CLIENTS: Apply dice result (OpCode 8) ─────────────────────────────
     // Show animation + activate/auto-move tokens for the rolling player's colour.
+    const DICE_ANIM_DELAY = 700;
     const allClientsApplyDiceResult = (data: { colour: TPlayerColour; roll: number }) => {
       const colour = data.colour;
       const roll = data.roll;
@@ -355,7 +422,8 @@ function Game({
 
       setTimeout(() => {
         dispatch(setIsPlaceholderShowing({ colour, isPlaceholderShowing: false }));
-        setTimeout(() => dispatch(setIsVisualRolling({ colour, isVisualRolling: false })), 700);
+        // Let the visual rolling animation finish slightly after we unblock logic
+        setTimeout(() => dispatch(setIsVisualRolling({ colour, isVisualRolling: false })), 600);
 
         if (roll === 6) {
           dispatch(incrementNumberOfConsecutiveSix(colour));
@@ -381,10 +449,8 @@ function Game({
         if (activePlayer.numberOfConsecutiveSix >= 3) {
           dispatch(resetNumberOfConsecutiveSix(colour));
           dispatch(deactivateAllTokens(colour));
-          setTimeout(() => {
-            const nextColour = getNextTurnColour(colour, pSeq);
-            socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
-          }, 400);
+          const nextColour = getNextTurnColour(colour, pSeq);
+          socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
           return;
         }
 
@@ -393,14 +459,10 @@ function Game({
           const allTokens = playersList.flatMap(p => p.tokens);
           const bestToken = selectBestTokenForBot(colour, roll, allTokens);
           if (!bestToken) {
-            setTimeout(() => {
-              const nextColour = getNextTurnColour(colour, pSeq);
-              socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
-            }, 400);
+            const nextColour = getNextTurnColour(colour, pSeq);
+            socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
           } else {
-            setTimeout(() => {
-              socket.sendMatchState(currentRoomId, 5, JSON.stringify({ colour, id: bestToken.id, isUnlock: bestToken.isLocked }));
-            }, 400);
+            socket.sendMatchState(currentRoomId, 5, JSON.stringify({ colour, id: bestToken.id, isUnlock: bestToken.isLocked }));
           }
           return;
         }
@@ -410,23 +472,18 @@ function Game({
           isTokenMovable(t, roll) || (roll === 6 && t.isLocked && !t.hasTokenReachedHome)
         );
         if (movableTokens.length === 0) {
-          // No moves → auto-advance turn
-          setTimeout(() => {
-            const nextColour = getNextTurnColour(colour, pSeq);
-            socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
-          }, 400);
+          // No moves → auto-advance turn immediately
+          const nextColour = getNextTurnColour(colour, pSeq);
+          socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
         } else if (movableTokens.length === 1 && areAllTokensInSameCoord(movableTokens)) {
-          // Only one choice → auto-move it
+          // Only one choice → auto-move it immediately
           const token = movableTokens[0];
-          setTimeout(() => {
-            socket.sendMatchState(currentRoomId, 5, JSON.stringify({ colour, id: token.id, isUnlock: token.isLocked }));
-          }, 100);
+          socket.sendMatchState(currentRoomId, 5, JSON.stringify({ colour, id: token.id, isUnlock: token.isLocked }));
         } else {
           // Multiple choices → activate tokens on ALL clients via broadcast
-          // We broadcast OpCode 11 to activate tokens on all clients
           socket.sendMatchState(currentRoomId, 11, JSON.stringify({ colour, diceNumber: roll }));
         }
-      }, 400);
+      }, DICE_ANIM_DELAY);
     };
 
     // ─── HOST: Handle token move request (OpCode 5) ────────────────────────────
@@ -454,6 +511,7 @@ function Game({
           hasTokenReachedHome: false,
           isCaptured: false,
           hasPlayerWon: false,
+          timeRemainingMs: store.getState().session.timeRemainingMs,
         }));
       } else {
         const { hasTokenReachedHome, isCaptured, hasPlayerWon } = computeMoveResult(token, diceNumber, state);
@@ -466,12 +524,15 @@ function Game({
           hasTokenReachedHome,
           isCaptured,
           hasPlayerWon,
+          timeRemainingMs: store.getState().session.timeRemainingMs,
         }));
       }
     };
 
     // ─── ALL CLIENTS: Apply token move result (OpCode 9) ──────────────────────
     // Both host and non-host clients execute and animate the resulting state concurrently.
+    // PERF: Host fires OpCode 6 (turn change) IMMEDIATELY — before animation completes.
+    // This means the turn change propagates to all clients in parallel with the animation.
     const allClientsApplyTokenMove = async (data: {
       colour: TPlayerColour;
       id: number;
@@ -492,6 +553,45 @@ function Game({
       if (!token) return;
 
       const diceNumber = state.dice.dice.find(d => d.colour === colour)?.diceNumber || 1;
+
+      // HOST must ALWAYS broadcast OpCode 6 (next turn) immediately.
+      // This must happen BEFORE any early returns so the turn always progresses.
+      // NOTE: We only broadcast OpCode 6 here if the move was NOT initiated by our own optimistic click.
+      // If it was our own click, we already broadcasted OpCode 6 synchronously on click.
+      const tokenKey = `${colour}-${data.id}`;
+      const isOptimistic = optimisticTokenMovesRef.current.has(tokenKey);
+
+      if (amHost && !data.hasPlayerWon && !isOptimistic) {
+        if (data.isUnlock) {
+          // Unlock always gives the same player another turn
+          socket.sendMatchState(roomIdRef.current, 6, JSON.stringify({
+            nextTurnColour: colour,
+            timeRemainingMs: store.getState().session.timeRemainingMs,
+          }));
+        } else {
+          const freshState = store.getState();
+          const activePlayer = freshState.players.players.find(p => p.colour === colour);
+          const pSeq = freshState.players.playerSequence;
+          const currentRoomId = roomIdRef.current;
+          const getsAnotherTurn =
+            (diceNumber === 6 && (activePlayer?.numberOfConsecutiveSix ?? 0) < 3) ||
+            data.isCaptured ||
+            data.hasTokenReachedHome;
+          const nextColour = getsAnotherTurn ? colour : getNextTurnColour(colour, pSeq);
+          socket.sendMatchState(currentRoomId, 6, JSON.stringify({
+            nextTurnColour: nextColour,
+            timeRemainingMs: store.getState().session.timeRemainingMs,
+          }));
+        }
+      }
+
+      // Optimistic skip: if we already animated this token click locally, skip re-animation.
+      if (isOptimistic) {
+        console.log('[OPTIMISTIC] Skipping re-animation of own token — already animated on click.', tokenKey);
+        optimisticTokenMovesRef.current.delete(tokenKey); // clean up
+        return;
+      }
+
       console.log('[ALL] Applying token move result:', colour, data.id, 'amHost:', amHost);
 
       if (data.isUnlock) {
@@ -501,27 +601,10 @@ function Game({
         dispatch(deactivateAllTokens(colour));
         setTimeout(() => {
           dispatch(setIsAnyTokenMoving(false));
-          if (amHost) {
-            // Unlock gives another turn — broadcast turn transition back to the same player
-            socket.sendMatchState(roomIdRef.current, 6, JSON.stringify({ nextTurnColour: colour }));
-          }
         }, FORWARD_TOKEN_TRANSITION_TIME);
       } else {
+        // Animate the opponent's token move concurrently
         await moveAndCapture(token, diceNumber);
-
-        if (amHost) {
-          const freshState = store.getState();
-          const activePlayer = freshState.players.players.find(p => p.colour === colour);
-          const pSeq = freshState.players.playerSequence;
-          const currentRoomId = roomIdRef.current;
-
-          if (data.hasPlayerWon) return; // Leaderboard will trigger automatically
-
-          const getsAnotherTurn = (diceNumber === 6 && (activePlayer?.numberOfConsecutiveSix ?? 0) < 3) || data.isCaptured || data.hasTokenReachedHome;
-          const nextColour = getsAnotherTurn ? colour : getNextTurnColour(colour, pSeq);
-          
-          socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
-        }
       }
     };
 
@@ -551,6 +634,11 @@ function Game({
       if (opCode >= 101 && opCode <= 103) {
         document.dispatchEvent(new CustomEvent('nakama-rematch-event', { detail: { opCode, parsed } }));
         return;
+      }
+
+      // Authoritative timer sync from host
+      if (parsed && typeof parsed.timeRemainingMs === 'number') {
+        dispatch(setTimeRemainingMs(parsed.timeRemainingMs));
       }
 
       if (opCode === 1) {
@@ -740,6 +828,18 @@ function Game({
     return allSessionIds[0] === (localSessionId || myPlayerId || '');
   }, [matchedUsers, localSessionId, myPlayerId]);
 
+  const onlineContextValue = useMemo(() => {
+    if (!isOnline) return null;
+    return {
+      isOnline: true,
+      roomId,
+      myPlayerColour,
+      amHost: amHostValue,
+      optimisticTokenMovesRef,
+      onHostTokenMove,
+    };
+  }, [isOnline, roomId, myPlayerColour, amHostValue, onHostTokenMove]);
+
   if (isOnline && !isMatchJoined) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'center', alignItems: 'center', backgroundColor: '#0b0222', color: '#ffca28', fontFamily: 'Jua, sans-serif' }}>
@@ -756,7 +856,7 @@ function Game({
   }
 
   return (
-    <OnlineGameContext.Provider value={isOnline ? { isOnline: true, roomId, myPlayerColour, amHost: amHostValue } : null}>
+    <OnlineGameContext.Provider value={onlineContextValue}>
       <div
         className={styles.game}
         style={

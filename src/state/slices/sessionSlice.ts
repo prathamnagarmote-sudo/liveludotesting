@@ -28,6 +28,9 @@ const reducers = {
   decrementTimeRemaining: (state: TSessionState, action: PayloadAction<number>) => {
     state.timeRemainingMs = Math.max(0, state.timeRemainingMs - action.payload);
   },
+  setTimeRemainingMs: (state: TSessionState, action: PayloadAction<number>) => {
+    state.timeRemainingMs = action.payload;
+  },
   clearSessionState: () => initialState,
 };
 
@@ -42,6 +45,7 @@ export const {
   addToGameInactiveTime, 
   setMatchDuration,
   decrementTimeRemaining,
+  setTimeRemainingMs,
   clearSessionState 
 } = sessionSlice.actions;
 
