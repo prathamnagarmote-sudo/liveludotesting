@@ -410,7 +410,7 @@ function Game({
 
     // ─── ALL CLIENTS: Apply dice result (OpCode 8) ─────────────────────────────
     // Show animation + activate/auto-move tokens for the rolling player's colour.
-    const DICE_ANIM_DELAY = 400;
+    const DICE_ANIM_DELAY = 1000;
     const allClientsApplyDiceResult = (data: { colour: TPlayerColour; roll: number }) => {
       const colour = data.colour;
       const roll = data.roll;

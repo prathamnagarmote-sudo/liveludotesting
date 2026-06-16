@@ -110,7 +110,13 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
   const isLeftOriented = actualPosition === 'red' || actualPosition === 'blue';
 
   const timerColor = phase === 1 ? '#32cd32' : phase === 2 ? '#ff9800' : '#ff4d4d';
-  const showRollArrow = isCurrentPlayer && !anyTokenActive && !isAnyTokenMoving && !isGameEnded && !isPlaceholderShowing;
+  const showRollArrow =
+    isCurrentPlayer &&
+    (!onlineContext?.isOnline || colour === onlineContext.myPlayerColour) &&
+    !anyTokenActive &&
+    !isAnyTokenMoving &&
+    !isGameEnded &&
+    !isPlaceholderShowing;
 
   const avatarContent = (
     <div className={styles.avatarContainerWrapper}>

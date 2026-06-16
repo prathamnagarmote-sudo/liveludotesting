@@ -1,7 +1,7 @@
 import type { TPlayerColour, TCoordinate } from '../../types';
 import type { TTokenPath } from '../../types/tokens';
 
-export const FORWARD_TOKEN_TRANSITION_TIME = 300;
+export const FORWARD_TOKEN_TRANSITION_TIME = 500;
 export const BACKWARD_TOKEN_TRANSITION_TIME = 100;
 
 export const GENERAL_TOKEN_PATH: TTokenPath[] = [
