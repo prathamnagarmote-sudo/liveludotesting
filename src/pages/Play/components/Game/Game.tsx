@@ -410,7 +410,7 @@ function Game({
 
     // ─── ALL CLIENTS: Apply dice result (OpCode 8) ─────────────────────────────
     // Show animation + activate/auto-move tokens for the rolling player's colour.
-    const DICE_ANIM_DELAY = 700;
+    const DICE_ANIM_DELAY = 500;
     const allClientsApplyDiceResult = (data: { colour: TPlayerColour; roll: number }) => {
       const colour = data.colour;
       const roll = data.roll;
@@ -423,7 +423,7 @@ function Game({
       setTimeout(() => {
         dispatch(setIsPlaceholderShowing({ colour, isPlaceholderShowing: false }));
         // Let the visual rolling animation finish slightly after we unblock logic
-        setTimeout(() => dispatch(setIsVisualRolling({ colour, isVisualRolling: false })), 600);
+        setTimeout(() => dispatch(setIsVisualRolling({ colour, isVisualRolling: false })), 200);
 
         if (roll === 6) {
           dispatch(incrementNumberOfConsecutiveSix(colour));

@@ -2,7 +2,7 @@ import { renewRollBag, setDiceNumber, setIsPlaceholderShowing, setIsVisualRollin
 import type { TPlayerColour } from '../../types';
 import type { AppDispatch, RootState } from '../store';
 
-const DICE_PLACEHOLDER_DELAY = 700;
+const DICE_PLACEHOLDER_DELAY = 500;
 
 export function rollDiceThunk(colour: TPlayerColour, onDiceRoll: (diceNumber: number) => void) {
   return (dispatch: AppDispatch, getState: () => RootState) => {
@@ -22,7 +22,7 @@ export function rollDiceThunk(colour: TPlayerColour, onDiceRoll: (diceNumber: nu
 
       setTimeout(() => {
         dispatch(setIsVisualRolling({ colour, isVisualRolling: false }));
-      }, 700);
+      }, 200);
     }, DICE_PLACEHOLDER_DELAY);
   };
 }
