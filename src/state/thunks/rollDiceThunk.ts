@@ -2,7 +2,7 @@ import { renewRollBag, setDiceNumber, setIsPlaceholderShowing, setIsVisualRollin
 import type { TPlayerColour } from '../../types';
 import type { AppDispatch, RootState } from '../store';
 
-const DICE_PLACEHOLDER_DELAY = 500;
+const DICE_PLACEHOLDER_DELAY = 300;
 
 export function rollDiceThunk(colour: TPlayerColour, onDiceRoll: (diceNumber: number) => void) {
   return (dispatch: AppDispatch, getState: () => RootState) => {
