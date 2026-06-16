@@ -20,7 +20,7 @@ import { handlePostDiceRollThunk } from '../../../../state/thunks/handlePostDice
 import GameFinishedScreen from '../GameFinishedScreen/GameFinishedScreen';
 import { changeTurnThunk } from '../../../../state/thunks/changeTurnThunk';
 import { useMoveAndCaptureToken } from '../../../../hooks/useMoveAndCaptureToken';
-import type { TPlayerInitData, TToken } from '../../../../types';
+import type { TPlayerInitData, TToken, TPlayer } from '../../../../types';
 import { useNavigate } from 'react-router-dom';
 import { quitMatchThunk } from '../../../../state/thunks/quitMatchThunk';
 import { playerCountToWord } from '../../../../game/players/logic';
@@ -33,11 +33,12 @@ import menuIcon from '../../../../assets/menu.svg';
 import { getNakamaSocket, ensureSocketConnected } from '../../../../services/nakama';
 import { toast } from 'react-toastify';
 import { selectBestTokenForBot } from '../../../../game/bot/selectBestTokenForBot';
-import { isTokenMovable } from '../../../../game/tokens/logic';
+import { isTokenMovable, tokensWithCoord } from '../../../../game/tokens/logic';
 import { areCoordsEqual } from '../../../../game/coords/logic';
 import { unlockAndAlignTokens } from '../../../../state/thunks/unlockAndAlignTokens';
 import { setTokenTransitionTime } from '../../../../utils/setTokenTransitionTime';
-import { FORWARD_TOKEN_TRANSITION_TIME } from '../../../../game/tokens/constants';
+import { FORWARD_TOKEN_TRANSITION_TIME, TOKEN_SAFE_COORDINATES } from '../../../../game/tokens/constants';
+import { tokenPaths } from '../../../../game/tokens/paths';
 import type { MatchData } from '@heroiclabs/nakama-js';
 
 
@@ -72,6 +73,40 @@ const areAllTokensInSameCoord = (tokens: TToken[]) => {
 const getNextTurnColour = (currentColour: TPlayerColour, playerSequence: TPlayerColour[]): TPlayerColour => {
   const idx = playerSequence.indexOf(currentColour);
   return playerSequence[(idx + 1) % playerSequence.length];
+};
+
+const computeMoveResult = (token: TToken, diceNumber: number, state: RootState) => {
+  const { colour, coordinates } = token;
+  const tokenPath = tokenPaths[colour];
+  const currentCoordIndex = tokenPath.findIndex((v) => areCoordsEqual(v, coordinates));
+  
+  if (currentCoordIndex === -1) {
+    return { hasTokenReachedHome: false, isCaptured: false, hasPlayerWon: false };
+  }
+
+  const finalIndex = Math.min(currentCoordIndex + diceNumber, tokenPath.length - 1);
+  const lastTokenCoord = tokenPath[finalIndex];
+  
+  const hasTokenReachedHome = areCoordsEqual(lastTokenCoord, tokenPath[tokenPath.length - 1]);
+  
+  const player = state.players.players.find((p: TPlayer) => p.colour === colour);
+  const homeCount = player ? player.tokens.filter((t: TToken) => t.hasTokenReachedHome).length : 0;
+  // If the token wasn't already home, and now reaches home, it's counted
+  const hasPlayerWon = hasTokenReachedHome && !token.hasTokenReachedHome && homeCount === 3;
+
+  // Capture check
+  let isCaptured = false;
+  const isSafe = TOKEN_SAFE_COORDINATES.some((c) => areCoordsEqual(c, lastTokenCoord));
+  if (!isSafe) {
+    const capturableTokens = tokensWithCoord(lastTokenCoord, state.players.players).filter(
+      (t) => t.colour !== colour
+    );
+    if (capturableTokens.length > 0) {
+      isCaptured = true;
+    }
+  }
+
+  return { hasTokenReachedHome, isCaptured, hasPlayerWon };
 };
 
 function Game({
@@ -396,7 +431,7 @@ function Game({
 
     // ─── HOST: Handle token move request (OpCode 5) ────────────────────────────
     // Executes the move, then broadcasts OpCode 9 (move result) + OpCode 6 (turn).
-    const hostHandleTokenMoveRequest = async (data: { colour: TPlayerColour; id: number; isUnlock: boolean }) => {
+    const hostHandleTokenMoveRequest = (data: { colour: TPlayerColour; id: number; isUnlock: boolean }) => {
       const colour = data.colour;
       const state = store.getState();
       const playersList = state.players.players;
@@ -407,19 +442,11 @@ function Game({
 
       const diceNumber = state.dice.dice.find(d => d.colour === colour)?.diceNumber || 1;
       const currentRoomId = roomIdRef.current;
-      const pSeq = state.players.playerSequence;
 
-      console.log('[HOST] Executing token move:', colour, data.id, 'isUnlock:', data.isUnlock);
+      console.log('[HOST] Instantly calculating token move:', colour, data.id, 'isUnlock:', data.isUnlock);
 
       if (data.isUnlock) {
-        // HOST: apply the unlock locally (allClientsApplyTokenMove skips the host)
-        dispatch(setIsAnyTokenMoving(true));
-        setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
-        dispatch(unlockAndAlignTokens({ colour, id: data.id }));
-        dispatch(deactivateAllTokens(colour));
-        setTimeout(() => dispatch(setIsAnyTokenMoving(false)), FORWARD_TOKEN_TRANSITION_TIME);
-
-        // Broadcast unlock result to ALL non-host clients
+        // Broadcast unlock result to ALL clients (including self via loopback) immediately
         socket.sendMatchState(currentRoomId, 9, JSON.stringify({
           colour,
           id: data.id,
@@ -428,55 +455,23 @@ function Game({
           isCaptured: false,
           hasPlayerWon: false,
         }));
-        // Unlock gives another turn — broadcast turn transition back to same player
-        setTimeout(() => {
-          socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: colour }));
-        }, FORWARD_TOKEN_TRANSITION_TIME + 100);
       } else {
-        const moveData = await moveAndCapture(token, diceNumber);
-        const freshState = store.getState();
-        const activePlayer = freshState.players.players.find(p => p.colour === colour);
+        const { hasTokenReachedHome, isCaptured, hasPlayerWon } = computeMoveResult(token, diceNumber, state);
 
-        if (moveData) {
-          const { hasTokenReachedHome, isCaptured, hasPlayerWon } = moveData;
-
-          // Broadcast move result to all clients
-          socket.sendMatchState(currentRoomId, 9, JSON.stringify({
-            colour,
-            id: data.id,
-            isUnlock: false,
-            hasTokenReachedHome,
-            isCaptured,
-            hasPlayerWon,
-          }));
-
-          if (hasPlayerWon) return;
-
-          const getsAnotherTurn = (diceNumber === 6 && (activePlayer?.numberOfConsecutiveSix ?? 0) < 3) || isCaptured || hasTokenReachedHome;
-          const nextColour = getsAnotherTurn ? colour : getNextTurnColour(colour, pSeq);
-          setTimeout(() => {
-            socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
-          }, 100);
-        } else {
-          // Move failed — advance turn
-          socket.sendMatchState(currentRoomId, 9, JSON.stringify({
-            colour,
-            id: data.id,
-            isUnlock: false,
-            hasTokenReachedHome: false,
-            isCaptured: false,
-            hasPlayerWon: false,
-          }));
-          const nextColour = getNextTurnColour(colour, pSeq);
-          setTimeout(() => {
-            socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
-          }, 100);
-        }
+        // Broadcast move result to ALL clients (including self via loopback) immediately
+        socket.sendMatchState(currentRoomId, 9, JSON.stringify({
+          colour,
+          id: data.id,
+          isUnlock: false,
+          hasTokenReachedHome,
+          isCaptured,
+          hasPlayerWon,
+        }));
       }
     };
 
     // ─── ALL CLIENTS: Apply token move result (OpCode 9) ──────────────────────
-    // The host already ran moveAndCapture. Non-host clients just sync the resulting state.
+    // Both host and non-host clients execute and animate the resulting state concurrently.
     const allClientsApplyTokenMove = async (data: {
       colour: TPlayerColour;
       id: number;
@@ -488,8 +483,6 @@ function Game({
       const mySessionId = getEffectivePlayerId();
       const allSessionIds = matchedUsers ? matchedUsers.map(u => u.presence.session_id).sort() : [];
       const amHost = allSessionIds.length > 0 && allSessionIds[0] === mySessionId;
-      // Host already applied the move via hostHandleTokenMoveRequest — skip re-application
-      if (amHost) return;
 
       const colour = data.colour;
       const state = store.getState();
@@ -499,16 +492,36 @@ function Game({
       if (!token) return;
 
       const diceNumber = state.dice.dice.find(d => d.colour === colour)?.diceNumber || 1;
-      console.log('[NON-HOST] Applying token move result:', colour, data.id);
+      console.log('[ALL] Applying token move result:', colour, data.id, 'amHost:', amHost);
 
       if (data.isUnlock) {
         dispatch(setIsAnyTokenMoving(true));
         setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
         dispatch(unlockAndAlignTokens({ colour, id: data.id }));
         dispatch(deactivateAllTokens(colour));
-        setTimeout(() => dispatch(setIsAnyTokenMoving(false)), FORWARD_TOKEN_TRANSITION_TIME);
+        setTimeout(() => {
+          dispatch(setIsAnyTokenMoving(false));
+          if (amHost) {
+            // Unlock gives another turn — broadcast turn transition back to the same player
+            socket.sendMatchState(roomIdRef.current, 6, JSON.stringify({ nextTurnColour: colour }));
+          }
+        }, FORWARD_TOKEN_TRANSITION_TIME);
       } else {
         await moveAndCapture(token, diceNumber);
+
+        if (amHost) {
+          const freshState = store.getState();
+          const activePlayer = freshState.players.players.find(p => p.colour === colour);
+          const pSeq = freshState.players.playerSequence;
+          const currentRoomId = roomIdRef.current;
+
+          if (data.hasPlayerWon) return; // Leaderboard will trigger automatically
+
+          const getsAnotherTurn = (diceNumber === 6 && (activePlayer?.numberOfConsecutiveSix ?? 0) < 3) || data.isCaptured || data.hasTokenReachedHome;
+          const nextColour = getsAnotherTurn ? colour : getNextTurnColour(colour, pSeq);
+          
+          socket.sendMatchState(currentRoomId, 6, JSON.stringify({ nextTurnColour: nextColour }));
+        }
       }
     };
 

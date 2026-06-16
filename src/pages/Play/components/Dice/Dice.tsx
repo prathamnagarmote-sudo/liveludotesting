@@ -4,7 +4,7 @@ import dice3 from '../../../../assets/dice/3.svg';
 import dice4 from '../../../../assets/dice/4.svg';
 import dice5 from '../../../../assets/dice/5.svg';
 import dice6 from '../../../../assets/dice/6.svg';
-import { useCallback, useEffect, useMemo, useContext, useRef } from 'react';
+import { useCallback, useEffect, useContext, useRef } from 'react';
 import { type TPlayerColour } from '../../../../types';
 import { useDispatch, useSelector } from 'react-redux';
 import { OnlineGameContext } from '../Game/Game';
@@ -37,12 +37,16 @@ type Props = {
 function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
   const dispatch = useDispatch<AppDispatch>();
   const onlineContext = useContext(OnlineGameContext);
-  const {
-    isAnyTokenMoving,
-    isGameEnded,
-    currentPlayerColour: currentPlayer,
-    players,
-  } = useSelector((state: RootState) => state.players);
+  const isAnyTokenMoving = useSelector((state: RootState) => state.players.isAnyTokenMoving);
+  const isGameEnded = useSelector((state: RootState) => state.players.isGameEnded);
+  const currentPlayer = useSelector((state: RootState) => state.players.currentPlayerColour);
+  const playerObj = useSelector((state: RootState) =>
+    state.players.players.find((p) => p.colour === colour)
+  );
+  const isBot = playerObj?.isBot;
+  const anyTokenActive = useSelector((state: RootState) =>
+    isAnyTokenActiveOfColour(colour, state.players.players)
+  );
   const { diceNumber, isPlaceholderShowing } =
     useSelector((state: RootState) => state.dice.dice.find((d) => d.colour === colour)) ?? {};
 
@@ -51,12 +55,6 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
     state.dice.dice.find((d) => d.isVisualRolling)?.colour
   );
 
-  const anyTokenActive = useMemo(
-    () => isAnyTokenActiveOfColour(colour, players),
-    [colour, players]
-  );
-  const playerObj = players.find((p) => p.colour === colour);
-  const isBot = players.find((p) => p.colour === colour)?.isBot;
   const isCurrentPlayer = currentPlayer === colour;
   const isVisualCurrentPlayer = (rollingPlayer || currentPlayer) === colour;
   const isMyTurn = onlineContext?.isOnline ? colour === onlineContext.myPlayerColour : true;
@@ -180,7 +178,7 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
       </div>
       <div className={styles.playerScore}>
         {(() => {
-          const score = getPlayerScore(players.find((p) => p.colour === colour)!);
+          const score = playerObj ? getPlayerScore(playerObj) : 0;
           return score >= 100 ? String(score) : String(score).padStart(2, '0');
         })()}
       </div>
