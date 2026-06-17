@@ -71,15 +71,24 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
   const isDiceRollAllowed = !anyTokenActive && !isAnyTokenMoving && !isPlaceholderShowing;
   const { phase, isCritical, shouldShowTimer } = useTurnTimer(colour, isDiceRollAllowed, timerPathRef);
 
+  const forcedNumberRef = useRef<number | null>(null);
+
   const handleDiceClick = useCallback(() => {
     if (isDiceDisabled) return;
     playDiceRollSound();
+
+    let forcedNumber: number | null = null;
+    if (import.meta.env.DEV && forcedNumberRef.current !== null) {
+      forcedNumber = forcedNumberRef.current;
+      forcedNumberRef.current = null;
+    }
+
     if (onlineContext?.isOnline) {
       if (onlineContext.amHost) {
         // Host: generate the roll and broadcast OpCode 8 directly.
         // All clients (including host itself via relay loopback) apply the result.
         // Do NOT call rollDiceThunk — wait for OpCode 8 loopback to apply state.
-        const roll = Math.floor(Math.random() * 6) + 1;
+        const roll = forcedNumber !== null ? forcedNumber : Math.floor(Math.random() * 6) + 1;
         getNakamaSocket().sendMatchState(onlineContext.roomId, 8, JSON.stringify({
           colour,
           roll,
@@ -89,14 +98,24 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
         getNakamaSocket().sendMatchState(onlineContext.roomId, 3, '{}');
       }
     } else {
-      dispatch(rollDiceThunk(colour, (diceNumber) => onDiceClick(colour, diceNumber)));
+      dispatch(rollDiceThunk(colour, (diceNumber) => onDiceClick(colour, diceNumber), forcedNumber !== null ? forcedNumber : undefined));
     }
   }, [colour, dispatch, isDiceDisabled, onDiceClick, onlineContext]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.repeat || e.key.toLowerCase() !== 'd' || isDiceDisabled) return;
-      handleDiceClick();
+      if (e.repeat) return;
+      if (import.meta.env.DEV) {
+        const num = parseInt(e.key, 10);
+        if (!isNaN(num) && num >= 1 && num <= 6) {
+          forcedNumberRef.current = num;
+          if (!isDiceDisabled) handleDiceClick();
+          return;
+        }
+      }
+      if (e.key.toLowerCase() === 'd' && !isDiceDisabled) {
+        handleDiceClick();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
