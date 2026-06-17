@@ -47,6 +47,13 @@ function Token({ colour, id, tokenClickData }: Props) {
 
   const { coordinates, isActive, isLocked, tokenAlignmentData } = token;
 
+  const prevCoordsRef = useRef(coordinates);
+  useEffect(() => {
+    prevCoordsRef.current = coordinates;
+  }, [coordinates]);
+
+  const hasMoved = coordinates.x !== prevCoordsRef.current.x || coordinates.y !== prevCoordsRef.current.y;
+
   const { scaleFactor } = tokenAlignmentData;
   const getPosition = useCoordsToPosition();
   const { x, y } = getPosition(coordinates, tokenAlignmentData);
@@ -174,7 +181,7 @@ function Token({ colour, id, tokenClickData }: Props) {
         key={`${coordinates.x}-${coordinates.y}`}
         className={clsx(styles.bouncer, {
           [styles.active]: isActive && !isCurrentlyFocused,
-          [styles.hopper]: !isActive,
+          [styles.hopper]: hasMoved,
         })}
       >
         <TokenImage

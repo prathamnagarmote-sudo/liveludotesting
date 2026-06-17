@@ -501,6 +501,7 @@ function Game({
 
       const diceNumber = state.dice.dice.find(d => d.colour === colour)?.diceNumber || 1;
       const currentRoomId = roomIdRef.current;
+      const pSeq = state.players.playerSequence;
 
       console.log('[HOST] Instantly calculating token move:', colour, data.id, 'isUnlock:', data.isUnlock);
 
@@ -513,6 +514,12 @@ function Game({
           hasTokenReachedHome: false,
           isCaptured: false,
           hasPlayerWon: false,
+          timeRemainingMs: store.getState().session.timeRemainingMs,
+        }));
+
+        // Unlock always gives the same player another turn
+        socket.sendMatchState(currentRoomId, 6, JSON.stringify({
+          nextTurnColour: colour,
           timeRemainingMs: store.getState().session.timeRemainingMs,
         }));
       } else {
@@ -528,6 +535,18 @@ function Game({
           hasPlayerWon,
           timeRemainingMs: store.getState().session.timeRemainingMs,
         }));
+
+        if (!hasPlayerWon) {
+          const getsAnotherTurn =
+            (diceNumber === 6 && (player.numberOfConsecutiveSix ?? 0) < 3) ||
+            isCaptured ||
+            hasTokenReachedHome;
+          const nextColour = getsAnotherTurn ? colour : getNextTurnColour(colour, pSeq);
+          socket.sendMatchState(currentRoomId, 6, JSON.stringify({
+            nextTurnColour: nextColour,
+            timeRemainingMs: store.getState().session.timeRemainingMs,
+          }));
+        }
       }
     };
 
@@ -556,36 +575,8 @@ function Game({
 
       const diceNumber = state.dice.dice.find(d => d.colour === colour)?.diceNumber || 1;
 
-      // HOST must ALWAYS broadcast OpCode 6 (next turn) immediately.
-      // This must happen BEFORE any early returns so the turn always progresses.
-      // NOTE: We only broadcast OpCode 6 here if the move was NOT initiated by our own optimistic click.
-      // If it was our own click, we already broadcasted OpCode 6 synchronously on click.
       const tokenKey = `${colour}-${data.id}`;
       const isOptimistic = optimisticTokenMovesRef.current.has(tokenKey);
-
-      if (amHost && !data.hasPlayerWon && !isOptimistic) {
-        if (data.isUnlock) {
-          // Unlock always gives the same player another turn
-          socket.sendMatchState(roomIdRef.current, 6, JSON.stringify({
-            nextTurnColour: colour,
-            timeRemainingMs: store.getState().session.timeRemainingMs,
-          }));
-        } else {
-          const freshState = store.getState();
-          const activePlayer = freshState.players.players.find(p => p.colour === colour);
-          const pSeq = freshState.players.playerSequence;
-          const currentRoomId = roomIdRef.current;
-          const getsAnotherTurn =
-            (diceNumber === 6 && (activePlayer?.numberOfConsecutiveSix ?? 0) < 3) ||
-            data.isCaptured ||
-            data.hasTokenReachedHome;
-          const nextColour = getsAnotherTurn ? colour : getNextTurnColour(colour, pSeq);
-          socket.sendMatchState(currentRoomId, 6, JSON.stringify({
-            nextTurnColour: nextColour,
-            timeRemainingMs: store.getState().session.timeRemainingMs,
-          }));
-        }
-      }
 
       // Optimistic skip: if we already animated this token click locally, skip re-animation.
       if (isOptimistic) {

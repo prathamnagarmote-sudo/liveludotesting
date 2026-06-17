@@ -11,6 +11,7 @@ import { OnlineGameContext } from '../Game/Game';
 import { getNakamaSocket } from '../../../../services/nakama';
 import type { AppDispatch, RootState } from '../../../../state/store';
 import { rollDiceThunk } from '../../../../state/thunks/rollDiceThunk';
+import { setIsPlaceholderShowing, setIsVisualRolling } from '../../../../state/slices/diceSlice';
 import { playerColours } from '../../../../game/players/constants';
 import { isAnyTokenActiveOfColour } from '../../../../game/tokens/logic';
 import { getPlayerScore } from '../../../../game/score/logic';
@@ -84,6 +85,10 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
     }
 
     if (onlineContext?.isOnline) {
+      // Optimistic roll: immediately show dice rolling state locally
+      dispatch(setIsPlaceholderShowing({ colour, isPlaceholderShowing: true }));
+      dispatch(setIsVisualRolling({ colour, isVisualRolling: true }));
+
       if (onlineContext.amHost) {
         // Host: generate the roll and broadcast OpCode 8 directly.
         // All clients (including host itself via relay loopback) apply the result.

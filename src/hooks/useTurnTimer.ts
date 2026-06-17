@@ -135,17 +135,23 @@ export function useTurnTimer(
         // Skip turn and increment missed turns
         dispatch(incrementMissedTurns(colour));
         if (onlineContext?.isOnline) {
-          // Only the player whose turn it is handles the turn skip and potential forfeit.
-          if (colour === onlineContext.myPlayerColour) {
+          // Both the player whose turn it is AND the host can resolve the timeout to avoid hangs (suspended tab safety).
+          const isMe = colour === onlineContext.myPlayerColour;
+          const isHost = onlineContext.amHost;
+          if (isMe || isHost) {
             try {
               const freshState = store.getState();
+              // Prevent race conditions where turn already changed or game ended
+              if (freshState.players.currentPlayerColour !== colour || freshState.players.isGameEnded) {
+                return;
+              }
               const pSeq = freshState.players.playerSequence;
               const nextColour = getNextTurnColour(colour, pSeq);
               const missedCount = freshState.players.players.find(p => p.colour === colour)?.missedTurns ?? 0;
 
               if (missedCount >= 3) {
                 // Player has missed 3 turns — they forfeit. Host broadcasts the forfeit.
-                if (onlineContext.amHost) {
+                if (isHost) {
                   // Find the other player(s) as winners
                   const otherPlayer = freshState.players.players.find(p => p.colour !== colour && !p.hasQuit);
                   if (otherPlayer) {
