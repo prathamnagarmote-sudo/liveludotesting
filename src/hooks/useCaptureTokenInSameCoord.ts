@@ -22,7 +22,7 @@ import { TOKEN_SAFE_COORDINATES } from '../game/tokens/constants';
 import { getTokenDOMId, tokensWithCoord } from '../game/tokens/logic';
 import { tokenPaths } from '../game/tokens/paths';
 import { sleep } from '../utils/sleep';
-import { cancelActiveTokenAnimation, registerCaptureCancelFn } from './useMoveTokenForward';
+import { registerCaptureCancelFn } from './useMoveTokenForward';
 
 export function useCaptureTokenInSameCoord() {
   const dispatch = useDispatch();
