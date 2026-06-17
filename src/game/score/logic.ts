@@ -17,7 +17,14 @@ export function getTokenProgress(token: TToken): number {
   // The very first spot on the board is index 0, but it counts as 0 progress according to rules until it moves?
   // Wait, "Rolling a 6 itself does not increase the score." 
   // If it's at index 0, it has taken 0 steps, so progress is 0. This matches perfectly.
-  return Math.max(0, currentIndex);
+  let progress = Math.max(0, currentIndex);
+  
+  // Add 25 bonus points if the token has successfully reached home
+  if (token.hasTokenReachedHome) {
+    progress += 25;
+  }
+  
+  return progress;
 }
 
 /**
