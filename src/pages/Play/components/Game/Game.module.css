@@ -34,14 +34,16 @@
 
 .menuBtn {
   /*
-   * Anchor the hamburger to the bottom-left of boardWrapper.
-   * top: 100% puts it right at the board's bottom edge;
-   * margin-top adds a small gap proportional to the board tile size.
-   * This keeps it always below the board regardless of screen height.
+   * Anchor the hamburger exactly below the blue L-shaped dice container.
+   * Blue L-container: starts at (100% + tile*0.15) below the board,
+   *                   height = tile*3.75
+   *                   → bottom edge at tile*(0.15 + 3.75) = tile*3.9
+   * Add a 0.25-tile gap for visual breathing room → total tile*4.15.
+   * This is fully dynamic: scales perfectly with the board on every screen.
    */
   position: absolute;
   left: 0;
-  top: calc(100% + calc(var(--board-tile-size) * 0.35));
+  top: calc(100% + calc(var(--board-tile-size) * 4.15));
   background: transparent;
   border: none;
   padding: 0;
