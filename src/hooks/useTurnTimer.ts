@@ -4,9 +4,10 @@ import { type RootState } from '../state/store';
 import { type TPlayerColour } from '../types';
 import { changeTurnThunk } from '../state/thunks/changeTurnThunk';
 import { useMoveAndCaptureToken } from './useMoveAndCaptureToken';
-import { incrementMissedTurns, setCurrentPlayerColour, deactivateAllTokens } from '../state/slices/playersSlice';
+import { incrementMissedTurns, setCurrentPlayerColour, deactivateAllTokens, setIsAnyTokenMoving } from '../state/slices/playersSlice';
 import { OnlineGameContext } from '../pages/Play/components/Game/Game';
 import { getNakamaSocket } from '../services/nakama';
+import { cancelActiveTokenAnimation } from './useMoveTokenForward';
 
 const TOTAL_TURN_TIME_MS = 15000;
 
@@ -124,7 +125,14 @@ export function useTurnTimer(
           requestRef.current = undefined;
         }
 
-        // Time is up! Skip turn and increment missed turns
+        // Time is up! Cancel any in-flight token animation immediately so
+        // isAnyTokenMoving is reset to false before we change the turn.
+        // Without this, the hopping animation from the expired turn continues
+        // into the next player's turn, blocking their timer and dice click.
+        cancelActiveTokenAnimation();
+        dispatch(setIsAnyTokenMoving(false));
+
+        // Skip turn and increment missed turns
         dispatch(incrementMissedTurns(colour));
         if (onlineContext?.isOnline) {
           // Only the player whose turn it is handles the turn skip and potential forfeit.

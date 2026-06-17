@@ -22,6 +22,7 @@ import { TOKEN_SAFE_COORDINATES } from '../game/tokens/constants';
 import { getTokenDOMId, tokensWithCoord } from '../game/tokens/logic';
 import { tokenPaths } from '../game/tokens/paths';
 import { sleep } from '../utils/sleep';
+import { cancelActiveTokenAnimation, registerCaptureCancelFn } from './useMoveTokenForward';
 
 export function useCaptureTokenInSameCoord() {
   const dispatch = useDispatch();
@@ -60,8 +61,16 @@ export function useCaptureTokenInSameCoord() {
         dispatch(setIsAnyTokenMoving(true));
         let isFirstCapture = true;
         let tokensSuccessfullyCaptured = 0;
+        let captureCancelled = false;
+        // Register cancel function so the global timer expiry can abort this animation
+        registerCaptureCancelFn(() => {
+          captureCancelled = true;
+          dispatch(setIsAnyTokenMoving(false));
+          resolve(false);
+        });
         (async () => {
           for (const t of capturableTokens) {
+            if (captureCancelled) break;
             const { colour, id, coordinates } = t;
             setTokenTransitionTime(BACKWARD_TOKEN_TRANSITION_TIME, t);
             const tokenPath = tokenPaths[colour];
@@ -73,6 +82,11 @@ export function useCaptureTokenInSameCoord() {
             let index = initialCoordinateIndex;
 
             const handleTransitionEnd = () => {
+              if (captureCancelled) {
+                tokenEl.removeEventListener('transitionend', handleTransitionEnd);
+                dispatch(setIsAnyTokenMoving(false));
+                return;
+              }
               index--;
               if (index < 0) {
                 dispatch(setIsAnyTokenMoving(false));
