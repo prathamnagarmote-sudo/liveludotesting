@@ -8,7 +8,7 @@
     "typeRoots": [
       "./node_modules"
     ],
-    "outFile": "../modules/index.js",
+    "outFile": "./data/modules/index.js",
     "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,

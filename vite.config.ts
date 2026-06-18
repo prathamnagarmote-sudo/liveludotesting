@@ -28,6 +28,7 @@ export default defineConfig({
   define: {
     __LIBRELUDO_VERSION__: JSON.stringify(version),
     __LIBRELUDO_LICENSE__: JSON.stringify(license),
+    __BUILD_TIMESTAMP__: JSON.stringify(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })),
   },
   plugins: [
     react(),

@@ -4,3 +4,4 @@
 declare module '@fontsource-variable/inter' {}
 declare const __LIBRELUDO_VERSION__: string;
 declare const __LIBRELUDO_LICENSE__: string;
+declare const __BUILD_TIMESTAMP__: string;
