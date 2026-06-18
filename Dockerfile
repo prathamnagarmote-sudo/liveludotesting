@@ -13,7 +13,7 @@ RUN npm run build
 # Run Nakama
 FROM heroiclabs/nakama:3.21.1
 
-COPY --from=node-builder /app/index.js /nakama/data/modules/
+COPY --from=node-builder /app/modules/index.js /nakama/data/modules/
 
 EXPOSE 7349 7350 7351
 
