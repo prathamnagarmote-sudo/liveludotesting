@@ -81,7 +81,7 @@ function GameFinishedScreen({ players }: Props) {
   if (!isGameOver && standings.length > 0) {
     const myColour = onlineContext ? onlineContext.myPlayerColour : players[0].colour;
     if (isTie) {
-       isLocalWinner = (standings[0].colour === myColour || standings[1].colour === myColour);
+       isLocalWinner = false;
     } else {
        isLocalWinner = standings[0].colour === myColour;
     }
