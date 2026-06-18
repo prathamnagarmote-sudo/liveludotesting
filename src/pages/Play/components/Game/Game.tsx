@@ -418,6 +418,10 @@ function Game({
       const colour = data.colour;
       const roll = data.roll;
 
+      // Set the dice number immediately — this ensures the logical dice state is up-to-date
+      // across all clients to prevent any race conditions with incoming token moves (OpCode 9)
+      dispatch(setDiceNumberDirect({ colour, diceNumber: roll }));
+
       // Determine remaining delay to match the previous 300ms dice roll animation duration
       let remainingDelay = 0;
       if (colour === myPlayerColourRef.current) {
@@ -431,8 +435,7 @@ function Game({
       }
 
       setTimeout(() => {
-        // Set the dice number and turn off visual rolling/placeholder
-        dispatch(setDiceNumberDirect({ colour, diceNumber: roll }));
+        // Turn off visual rolling/placeholder after the animation finishes
         dispatch(setIsPlaceholderShowing({ colour, isPlaceholderShowing: false }));
         dispatch(setIsVisualRolling({ colour, isVisualRolling: false }));
 
