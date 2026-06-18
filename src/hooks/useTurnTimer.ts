@@ -4,17 +4,11 @@ import { type RootState } from '../state/store';
 import { type TPlayerColour } from '../types';
 import { changeTurnThunk } from '../state/thunks/changeTurnThunk';
 import { useMoveAndCaptureToken } from './useMoveAndCaptureToken';
-import { incrementMissedTurns, setCurrentPlayerColour, deactivateTokensOfAllPlayers, setIsAnyTokenMoving } from '../state/slices/playersSlice';
+import { incrementMissedTurns, deactivateTokensOfAllPlayers, setIsAnyTokenMoving } from '../state/slices/playersSlice';
 import { OnlineGameContext } from '../pages/Play/components/Game/Game';
-import { getNakamaSocket } from '../services/nakama';
 import { cancelActiveTokenAnimation } from './useMoveTokenForward';
 
 const TOTAL_TURN_TIME_MS = 15000;
-
-const getNextTurnColour = (currentColour: TPlayerColour, playerSequence: TPlayerColour[]): TPlayerColour => {
-  const idx = playerSequence.indexOf(currentColour);
-  return playerSequence[(idx + 1) % playerSequence.length];
-};
 
 export function useTurnTimer(
   colour: TPlayerColour,
@@ -80,9 +74,14 @@ export function useTurnTimer(
     }
 
     const updateTimer = (timestamp: number) => {
-      if (!startTimeRef.current) startTimeRef.current = timestamp;
-      const elapsed = timestamp - startTimeRef.current;
-      const MathRemaining = Math.max(0, TOTAL_TURN_TIME_MS - elapsed);
+      let MathRemaining = 0;
+      if (onlineContext?.isOnline && onlineContext.turnDeadlineMs) {
+        MathRemaining = Math.max(0, onlineContext.turnDeadlineMs - Date.now());
+      } else {
+        if (!startTimeRef.current) startTimeRef.current = timestamp;
+        const elapsed = timestamp - startTimeRef.current;
+        MathRemaining = Math.max(0, TOTAL_TURN_TIME_MS - elapsed);
+      }
       
       // Direct DOM manipulation of the SVG path for ultra-smooth rendering
       if (pathRef.current) {
@@ -132,55 +131,13 @@ export function useTurnTimer(
         cancelActiveTokenAnimation();
         dispatch(setIsAnyTokenMoving(false));
 
+        if (onlineContext?.isOnline) {
+          // Under server-authoritative model, we let the server resolve timeouts
+          return;
+        }
         // Skip turn and increment missed turns
         dispatch(incrementMissedTurns(colour));
-        if (onlineContext?.isOnline) {
-          // Both the player whose turn it is AND the host can resolve the timeout to avoid hangs (suspended tab safety).
-          const isMe = colour === onlineContext.myPlayerColour;
-          const isHost = onlineContext.amHost;
-          if (isMe || isHost) {
-            try {
-              const freshState = store.getState();
-              // Prevent race conditions where turn already changed or game ended
-              if (freshState.players.currentPlayerColour !== colour || freshState.players.isGameEnded) {
-                return;
-              }
-              const pSeq = freshState.players.playerSequence;
-              const nextColour = getNextTurnColour(colour, pSeq);
-              const missedCount = freshState.players.players.find(p => p.colour === colour)?.missedTurns ?? 0;
-
-              if (missedCount >= 3) {
-                // Player has missed 3 turns — they forfeit. Host broadcasts the forfeit.
-                if (isHost) {
-                  // Find the other player(s) as winners
-                  const otherPlayer = freshState.players.players.find(p => p.colour !== colour && !p.hasQuit);
-                  if (otherPlayer) {
-                    getNakamaSocket().sendMatchState(
-                      onlineContext.roomId,
-                      10,
-                      JSON.stringify({ winnerColor: otherPlayer.colour, loserColor: colour })
-                    );
-                  }
-                } else {
-                  // Non-host sends an OpCode 7 (quit) so host can broadcast forfeit
-                  getNakamaSocket().sendMatchState(
-                    onlineContext.roomId,
-                    7,
-                    JSON.stringify({ colour })
-                  );
-                }
-              } else {
-                // Normal turn skip
-                getNakamaSocket().sendMatchState(
-                  onlineContext.roomId,
-                  6,
-                  JSON.stringify({ nextTurnColour: nextColour })
-                );
-                dispatch(deactivateTokensOfAllPlayers());
-                dispatch(setCurrentPlayerColour(nextColour));
-              }
-            } catch (e) {}
-          }
+        if (false) {
         } else {
           // Offline: check local missed turns and handle game-over
           const freshState = store.getState();

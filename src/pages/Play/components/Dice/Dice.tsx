@@ -20,6 +20,7 @@ import styles from './Dice.module.css';
 import clsx from 'clsx';
 import { playDiceRollSound } from '../../../../utils/audio';
 import { useTurnTimer } from '../../../../hooks/useTurnTimer';
+import { toast } from 'react-toastify';
 
 const woodStainColours: Record<TPlayerColour, string> = {
   red: 'url(#token-grad-red)',
@@ -92,16 +93,15 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
         onlineContext.diceRollStartTimestampRef.current = Date.now();
       }
 
-      // Generate the roll result locally
-      const roll = forcedNumber !== null ? forcedNumber : Math.floor(Math.random() * 6) + 1;
-
-      // Broadcast OpCode 8 directly to all players in the match (the socket's sendMatchState
-      // is monkeypatched to simulate loopback, which will apply it locally to this client too)
-      getNakamaSocket().sendMatchState(onlineContext.roomId, 8, JSON.stringify({
-        colour,
-        roll,
-        timestamp: Date.now(),
-      }));
+      try {
+        // Send roll request input to Nakama (OpCode 100)
+        getNakamaSocket().sendMatchState(onlineContext.roomId, 100, JSON.stringify({}));
+      } catch (err) {
+        console.error("Failed to send dice roll input:", err);
+        dispatch(setIsPlaceholderShowing({ colour, isPlaceholderShowing: false }));
+        dispatch(setIsVisualRolling({ colour, isVisualRolling: false }));
+        toast.error("Failed to sync dice roll with server.");
+      }
     } else {
       dispatch(rollDiceThunk(colour, (diceNumber) => onDiceClick(colour, diceNumber), forcedNumber !== null ? forcedNumber : undefined));
     }
