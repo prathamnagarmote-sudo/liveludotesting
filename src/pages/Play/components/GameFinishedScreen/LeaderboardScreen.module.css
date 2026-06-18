@@ -82,7 +82,7 @@
 
 .tableHeader {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: 1fr 150px 1fr;
   align-items: center;
   padding: 0 15px 15px;
   font-size: 1rem;
@@ -97,7 +97,6 @@
 }
 .tableHeader span:nth-child(2) {
   text-align: center;
-  padding-left: 20px; /* Offset slightly to balance the avatar */
 }
 .tableHeader span:nth-child(3) {
   text-align: center;
@@ -112,7 +111,7 @@
 
 .tableRow {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: 1fr 150px 1fr;
   align-items: center;
   padding: 0 5px;
 }
@@ -126,7 +125,7 @@
 .nameCol {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 15px;
 }
 
@@ -221,13 +220,13 @@
     padding-bottom: 8px;
     margin-bottom: 10px;
     font-size: 0.9rem;
-    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-columns: 1fr 130px 1fr;
   }
   .tableBody {
     gap: 8px;
   }
   .tableRow {
-    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-columns: 1fr 130px 1fr;
   }
   .rowAvatar {
     width: 32px;
