@@ -88,6 +88,9 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
       // Optimistic roll: immediately show dice rolling state locally
       dispatch(setIsPlaceholderShowing({ colour, isPlaceholderShowing: true }));
       dispatch(setIsVisualRolling({ colour, isVisualRolling: true }));
+      if (onlineContext.diceRollStartTimestampRef) {
+        onlineContext.diceRollStartTimestampRef.current = Date.now();
+      }
 
       if (onlineContext.amHost) {
         // Host: generate the roll and broadcast OpCode 8 directly.
