@@ -93,14 +93,16 @@ const matchmakerMatched: nkruntime.MatchmakerMatchedFunction = function(
   }
 };
 
+function ludoPing(ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
+  logger.info("ludo_ping called");
+  return JSON.stringify({ status: "ok", module: "ludo_match", version: "v6", timestamp: Date.now() });
+}
+
 function InitModule(ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkruntime.Nakama, initializer: nkruntime.Initializer) {
-  logger.info("Nakama Ludo Server Logic Initialized v5");
+  logger.info("Nakama Ludo Server Logic Initialized v6");
   
   // Diagnostic RPC — call via: GET /v2/rpc/ludo_ping?http_key=defaultkey
-  initializer.registerRpc('ludo_ping', function(ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkruntime.Nakama, payload: string): string {
-    logger.info("ludo_ping called");
-    return JSON.stringify({ status: "ok", module: "ludo_match", version: "v5", timestamp: Date.now() });
-  });
+  initializer.registerRpc('ludo_ping', ludoPing);
   logger.info("Diagnostic RPC 'ludo_ping' registered");
 
   initializer.registerMatch('ludo_match', {
