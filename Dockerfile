@@ -24,15 +24,12 @@ RUN mkdir -p /nakama/data/modules /nakama/modules
 COPY --from=node-builder /app/nakama/data/modules/index.js /nakama/data/modules/index.js
 COPY --from=node-builder /app/nakama/data/modules/index.js /nakama/modules/index.js
 
-# Create a startup script that:
-# 1. Copies the module from /opt/ to BOTH default and custom runtime directories
-# 2. Verifies the files exist
-# 3. Runs migration
-# 4. Starts Nakama with explicit runtime path
-RUN printf '#!/bin/sh\nset -e\necho "[STARTUP] Copying ludo module from /opt/ to runtime directories..."\nmkdir -p /nakama/data/modules /nakama/modules\ncp /opt/ludo_module.js /nakama/data/modules/index.js\ncp /opt/ludo_module.js /nakama/modules/index.js\necho "[STARTUP] Module files:"\nls -la /opt/ludo_module.js /nakama/data/modules/index.js /nakama/modules/index.js\necho "[STARTUP] First 3 lines of module:"\nhead -3 /nakama/data/modules/index.js\nif [ -n "$NAKAMA_DATABASE_ADDRESS" ]; then DB_ADDR="$NAKAMA_DATABASE_ADDRESS"; elif [ -n "$NAKAMA_DATABASE_URL" ]; then DB_ADDR="$NAKAMA_DATABASE_URL"; elif [ -n "$DATABASE_URL" ]; then DB_ADDR="$DATABASE_URL"; else DB_ADDR="root@localhost:5432/nakama"; fi\necho "[STARTUP] Running migration..."\n/nakama/nakama migrate up --database.address "$DB_ADDR"\necho "[STARTUP] Starting Nakama..."\nexec /nakama/nakama --name nakama1 --database.address "$DB_ADDR" --logger.level INFO\n' > /usr/local/bin/start-nakama.sh && chmod +x /usr/local/bin/start-nakama.sh
-
 EXPOSE 7349 7350 7351
 
-# NOTE: We intentionally do NOT specify --runtime.path here so Nakama uses its
-# default: /nakama/data/modules. The startup script copies the module there.
-ENTRYPOINT ["/usr/local/bin/start-nakama.sh"]
+# At startup, copy the baked-in module to the runtime paths, run migrations, and start Nakama
+ENTRYPOINT mkdir -p /nakama/data/modules /nakama/modules && \
+           cp /opt/ludo_module.js /nakama/data/modules/index.js && \
+           cp /opt/ludo_module.js /nakama/modules/index.js && \
+           if [ -n "$NAKAMA_DATABASE_ADDRESS" ]; then DB_ADDR="$NAKAMA_DATABASE_ADDRESS"; elif [ -n "$NAKAMA_DATABASE_URL" ]; then DB_ADDR="$NAKAMA_DATABASE_URL"; elif [ -n "$DATABASE_URL" ]; then DB_ADDR="$DATABASE_URL"; else DB_ADDR="root@localhost:5432/nakama"; fi && \
+           /nakama/nakama migrate up --database.address "$DB_ADDR" && \
+           exec /nakama/nakama --name nakama1 --database.address "$DB_ADDR" --logger.level INFO
