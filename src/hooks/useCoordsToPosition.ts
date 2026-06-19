@@ -18,7 +18,7 @@ export const useCoordsToPosition = (): ((
       const tileCenterY = (coords.y + 0.5) * boardTileSize;
 
       const x = `${tileCenterX - tokenWidth / 2 + xOffset * boardTileSize}px`;
-      const yOffsetFactor = 0.88;
+      const yOffsetFactor = 0.85;
       const y = `${tileCenterY - tokenHeight * yOffsetFactor + yOffset * boardTileSize}px`;
       return { x, y };
     },
