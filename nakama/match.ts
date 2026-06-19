@@ -414,7 +414,7 @@ function matchInit(
 
     return {
       state,
-      tickRate: 60,
+      tickRate: 100,
       label: ""
     };
   } catch (e: any) {
@@ -516,7 +516,7 @@ function matchLeave(
     for (let i = 0; i < s.players.length; i++) {
       const player = s.players[i];
       if (player.userId === presence.userId) {
-        s.botTakeoverTicks[presence.userId] = tick + 240; // 4 seconds at 60Hz
+        s.botTakeoverTicks[presence.userId] = tick + 400; // 4 seconds at 100Hz
       }
     }
   }
@@ -1073,7 +1073,7 @@ function executeMove(
   if (hasPlayerWon) {
     state.status = 'ended';
     state.winnerColour = colour;
-    state.terminateAfterTicks = state.tickCount + 1200; // 20 seconds at 60Hz
+    state.terminateAfterTicks = state.tickCount + 2000; // 20 seconds at 100Hz
     state.rematchAccepted = [];
     dispatcher.broadcastMessage(204, JSON.stringify({
       winnerColour: colour
@@ -1129,9 +1129,9 @@ function matchLoop(
   const s = state as any;
   s.tickCount = tick;
 
-  // ─── Periodic STATE_SYNC: broadcast full state every ~5 seconds (300 ticks @ 60Hz)
+  // ─── Periodic STATE_SYNC: broadcast full state every ~5 seconds (500 ticks @ 100Hz)
   // This guarantees clients get STATE_SYNC even if the initial matchJoin push was lost.
-  if (tick - s.lastStateSyncTick >= 300) {
+  if (tick - s.lastStateSyncTick >= 500) {
     s.lastStateSyncTick = tick;
     dispatcher.broadcastMessage(200, JSON.stringify({
       roomId: s.roomId,
@@ -1408,7 +1408,7 @@ function matchLoop(
           if (activeHumanCount <= 1 || s.playerSequence.length <= 1) {
             s.status = 'ended';
             s.winnerColour = winnerColour;
-            s.terminateAfterTicks = tick + 1200;
+            s.terminateAfterTicks = tick + 2000;
             s.rematchAccepted = [];
             dispatcher.broadcastMessage(204, JSON.stringify({
               winnerColour: winnerColour
@@ -1533,14 +1533,14 @@ function matchLoop(
   if (currentPlayer && currentPlayer.isBot && s.noMovableTokensTimer === null) {
     if (!s.hasRolled) {
       if (!s.botRollTick) {
-        s.botRollTick = tick + 30; // 500ms think time at 60Hz
+        s.botRollTick = tick + 40; // 400ms think time at 100Hz
       } else if (tick >= s.botRollTick) {
         executeRoll(s, dispatcher, currentColour);
         s.botRollTick = null;
       }
     } else {
       if (!s.botMoveTick) {
-        s.botMoveTick = tick + 30; // 500ms think time at 60Hz
+        s.botMoveTick = tick + 40; // 400ms think time at 100Hz
       } else if (tick >= s.botMoveTick) {
         const allTokens: TToken[] = [];
         for (let p = 0; p < s.players.length; p++) {
@@ -1577,7 +1577,7 @@ function matchLoop(
 
   if (isMatchEmpty) {
     s.emptyTicks++;
-    if (s.emptyTicks > 600) {
+    if (s.emptyTicks > 1000) {
       return null;
     }
   } else {

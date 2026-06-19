@@ -326,7 +326,44 @@ function Game({
         remainingDelay = 300;
       }
 
-      setTimeout(() => {
+      // Prefetch auto-move decision and send to server early to overlap with dice roll animation
+      let autoMoveTokenId: number | null = null;
+      let isAutoMoveLocked = false;
+      if (data.hasMovableTokens && colour === myPlayerColourRef.current) {
+        const freshState = store.getState();
+        const players = freshState.players.players;
+        const player = players.find((p) => p.colour === colour);
+        if (player) {
+          const areUnlockableTokensPresent =
+            roll === 6 && player.tokens.some((t) => areCoordsEqual(t.coordinates, t.initialCoords));
+          const allTokens = players.flatMap((p) => p.tokens);
+          const movableTokens = player.tokens.filter((t) => isTokenMovable(t, roll, allTokens));
+          const areAllTokensInSameCoord =
+            movableTokens.length === 0
+              ? false
+              : movableTokens.every((t) => areCoordsEqual(movableTokens[0].coordinates, t.coordinates));
+
+          if (areAllTokensInSameCoord && !areUnlockableTokensPresent) {
+            const targetToken = movableTokens[0];
+            autoMoveTokenId = targetToken.id;
+            isAutoMoveLocked = targetToken.isLocked;
+
+            // Register optimistically early
+            const moveKey = `${colour}_${targetToken.id}`;
+            optimisticTokenMovesRef.current.add(moveKey);
+
+            try {
+              console.log('[AUTO-MOVE-PREFETCH] Sending auto-move early to parallelize network delay:', colour, targetToken.id);
+              const socket = getNakamaSocket();
+              socket.sendMatchState(roomIdRef.current, 101, JSON.stringify({ id: targetToken.id }));
+            } catch (err) {
+              console.error('[CLIENT] Failed to send early auto-move input:', err);
+            }
+          }
+        }
+      }
+
+      const applyResult = () => {
         dispatch(setIsPlaceholderShowing({ colour, isPlaceholderShowing: false }));
         dispatch(setIsVisualRolling({ colour, isVisualRolling: false }));
 
@@ -342,57 +379,42 @@ function Game({
           dispatch(resetNumberOfConsecutiveSix(colour));
         }
 
-        // Activate tokens locally ONLY for the active local player so they can click.
-        if (data.hasMovableTokens && colour === myPlayerColourRef.current) {
+        // Auto-move visual execution
+        if (autoMoveTokenId !== null) {
           const freshState = store.getState();
-          const players = freshState.players.players;
-          const player = players.find((p) => p.colour === colour);
-          if (player) {
-            const areUnlockableTokensPresent =
-              roll === 6 && player.tokens.some((t) => areCoordsEqual(t.coordinates, t.initialCoords));
-
-            const allTokens = players.flatMap((p) => p.tokens);
-            const movableTokens = player.tokens.filter((t) => isTokenMovable(t, roll, allTokens));
-
-            const areAllTokensInSameCoord =
-              movableTokens.length === 0
-                ? false
-                : movableTokens.every((t) => areCoordsEqual(movableTokens[0].coordinates, t.coordinates));
-
-            if (areAllTokensInSameCoord && !areUnlockableTokensPresent) {
-              const targetToken = movableTokens[0];
-              console.log('[AUTO-MOVE] Automatically moving token:', colour, targetToken.id);
-              dispatch(deactivateAllTokens(colour));
-
-              // Optimistic animation for auto-move
-              const moveKey = `${colour}_${targetToken.id}`;
-              optimisticTokenMovesRef.current.add(moveKey);
-              if (targetToken.isLocked) {
-                dispatch(setIsAnyTokenMoving(true));
-                setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, targetToken);
-                dispatch(unlockAndAlignTokens({ colour, id: targetToken.id }));
-                setTimeout(() => {
-                  dispatch(setIsAnyTokenMoving(false));
-                }, FORWARD_TOKEN_TRANSITION_TIME);
-              } else {
-                moveAndCapture(targetToken, roll);
-              }
-
-              try {
-                const socket = getNakamaSocket();
-                socket.sendMatchState(roomIdRef.current, 101, JSON.stringify({ id: targetToken.id }));
-              } catch (err) {
-                console.error('[CLIENT] Failed to send auto-move input:', err);
-              }
-              onComplete?.();
-              return;
+          const player = freshState.players.players.find((p) => p.colour === colour);
+          const targetToken = player?.tokens.find((t) => t.id === autoMoveTokenId);
+          if (targetToken) {
+            console.log('[AUTO-MOVE-EXECUTE] Playing visual animation for prefetched auto-move:', colour, targetToken.id);
+            dispatch(deactivateAllTokens(colour));
+            if (isAutoMoveLocked) {
+              dispatch(setIsAnyTokenMoving(true));
+              setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, targetToken);
+              dispatch(unlockAndAlignTokens({ colour, id: targetToken.id }));
+              setTimeout(() => {
+                dispatch(setIsAnyTokenMoving(false));
+              }, FORWARD_TOKEN_TRANSITION_TIME);
+            } else {
+              moveAndCapture(targetToken, roll);
             }
           }
+          onComplete?.();
+          return;
+        }
+
+        // Activate tokens locally ONLY for the active local player so they can click.
+        if (data.hasMovableTokens && colour === myPlayerColourRef.current) {
           dispatch(activateTokens({ all: roll === 6, colour, diceNumber: roll }));
         }
         
         onComplete?.();
-      }, remainingDelay);
+      };
+
+      if (remainingDelay <= 0) {
+        applyResult();
+      } else {
+        setTimeout(applyResult, remainingDelay);
+      }
     };
 
     // ─── ALL CLIENTS: Apply token move result (OpCode 202) ──────────────────────
