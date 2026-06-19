@@ -473,8 +473,10 @@ function matchJoin(
   const s = state as any;
   for (let p = 0; p < presences.length; p++) {
     const presence = presences[p];
+    let matched = false;
     for (let i = 0; i < s.players.length; i++) {
       const player = s.players[i];
+      logger.info("matchJoin: comparing player.userId=%v with presence.userId=%v", player.userId, presence.userId);
       if (player.userId === presence.userId) {
         player.id = presence.sessionId;
         player.isBot = false;
@@ -484,8 +486,14 @@ function matchJoin(
         if (s.botTakeoverTicks[presence.userId]) {
           delete s.botTakeoverTicks[presence.userId];
         }
+        logger.info("matchJoin: sending STATE_SYNC to presence userId=%v sessionId=%v", presence.userId, presence.sessionId);
         sendStateSync(dispatcher, s, presence);
+        matched = true;
       }
+    }
+    if (!matched) {
+      logger.warn("matchJoin: presence userId=%v did not match any player. Available userIds: %v",
+        presence.userId, JSON.stringify(s.players.map(function(pl: any) { return pl.userId; })));
     }
   }
 
@@ -1383,9 +1391,26 @@ function matchLoop(
         }
       }
 
+      if (opCode === 199) { // REQUEST_STATE_SYNC — any player can request their current game state
+        // Update the player's sessionId in case of reconnect
+        for (let i = 0; i < s.players.length; i++) {
+          if (s.players[i].userId === message.sender.userId) {
+            s.players[i].id = message.sender.sessionId;
+            s.players[i].isBot = false;
+            if (s.botTakeoverTicks[message.sender.userId]) {
+              delete s.botTakeoverTicks[message.sender.userId];
+            }
+          }
+        }
+        logger.info("REQUEST_STATE_SYNC from userId=%v sessionId=%v", message.sender.userId, message.sender.sessionId);
+        sendStateSync(dispatcher, s, message.sender);
+        return;
+      }
+
       if (!currentPlayer || currentPlayer.id !== message.sender.sessionId) {
         return;
       }
+
 
       if (opCode === 100) { // INPUT_ROLL_DICE
         if (s.hasRolled) {

@@ -444,6 +444,7 @@ function Game({
     };
 
     let requestInterval: any;
+    let stateSyncRetryInterval: any;
 
     const handleSingleSocketMessage = async (opCode: number, parsed: any, _result: MatchData) => {
       console.log(`[SOCKET QUEUE] Processing OpCode ${opCode}`, parsed);
@@ -570,10 +571,35 @@ function Game({
         }
 
         const joinedMatchId = match.match_id;
+        console.log('[ONLINE] Joined match successfully. match_id:', joinedMatchId);
         setRoomId(joinedMatchId);
 
         const mySessionId = match.self?.session_id || '';
         if (mySessionId) setLocalSessionId(mySessionId);
+
+        // Explicitly request STATE_SYNC from server (OpCode 199).
+        // This is the authoritative trigger: even if matchJoin's push was lost in transit,
+        // the server will respond to our request with a fresh STATE_SYNC.
+        const sendStateSyncRequest = () => {
+          try {
+            console.log('[ONLINE] Sending REQUEST_STATE_SYNC (OpCode 199)...');
+            getNakamaSocket().sendMatchState(joinedMatchId, 199, '{}');
+          } catch (e) {
+            console.warn('[ONLINE] Failed to send state sync request:', e);
+          }
+        };
+
+        // Send immediately, then retry every 2s until STATE_SYNC received
+        sendStateSyncRequest();
+        stateSyncRetryInterval = setInterval(() => {
+          if (matchJoinedRef.current && !playersRegisteredInitiallyRef.current) {
+            // STATE_SYNC received → stop retrying
+            clearInterval(stateSyncRetryInterval);
+            return;
+          }
+          console.log('[ONLINE] Retrying REQUEST_STATE_SYNC (OpCode 199)...');
+          sendStateSyncRequest();
+        }, 2000);
 
         // Periodically ping host to maintain connection
         requestInterval = setInterval(() => {
@@ -584,6 +610,7 @@ function Game({
       } catch (e: any) {
         matchJoinedRef.current = false;
         if (requestInterval) clearInterval(requestInterval);
+        if (stateSyncRetryInterval) clearInterval(stateSyncRetryInterval);
         console.error('[ONLINE] Error joining match:', e);
         toast.error('Error joining match: ' + e.message);
         navigate('/setup');
@@ -598,6 +625,7 @@ function Game({
       socket.onerror = originalOnError;
       socket.sendMatchState = originalSendMatchState; // Restore original sendMatchState
       if (requestInterval) clearInterval(requestInterval);
+      if (stateSyncRetryInterval) clearInterval(stateSyncRetryInterval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnline, matchedToken, matchId, myPlayerId, myUserId]);

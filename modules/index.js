@@ -390,8 +390,10 @@ function matchJoin(ctx, logger, nk, dispatcher, tick, state, presences) {
     var s = state;
     for (var p = 0; p < presences.length; p++) {
         var presence = presences[p];
+        var matched = false;
         for (var i = 0; i < s.players.length; i++) {
             var player = s.players[i];
+            logger.info("matchJoin: comparing player.userId=%v with presence.userId=%v", player.userId, presence.userId);
             if (player.userId === presence.userId) {
                 player.id = presence.sessionId;
                 player.isBot = false;
@@ -401,8 +403,13 @@ function matchJoin(ctx, logger, nk, dispatcher, tick, state, presences) {
                 if (s.botTakeoverTicks[presence.userId]) {
                     delete s.botTakeoverTicks[presence.userId];
                 }
+                logger.info("matchJoin: sending STATE_SYNC to presence userId=%v sessionId=%v", presence.userId, presence.sessionId);
                 sendStateSync(dispatcher, s, presence);
+                matched = true;
             }
+        }
+        if (!matched) {
+            logger.warn("matchJoin: presence userId=%v did not match any player. Available userIds: %v", presence.userId, JSON.stringify(s.players.map(function (pl) { return pl.userId; })));
         }
     }
     return { state: state };
@@ -1202,6 +1209,21 @@ function matchLoop(ctx, logger, nk, dispatcher, tick, state, messages) {
                     currentPlayer_1 = s.players[i];
                     break;
                 }
+            }
+            if (opCode === 199) { // REQUEST_STATE_SYNC — any player can request their current game state
+                // Update the player's sessionId in case of reconnect
+                for (var i = 0; i < s.players.length; i++) {
+                    if (s.players[i].userId === message.sender.userId) {
+                        s.players[i].id = message.sender.sessionId;
+                        s.players[i].isBot = false;
+                        if (s.botTakeoverTicks[message.sender.userId]) {
+                            delete s.botTakeoverTicks[message.sender.userId];
+                        }
+                    }
+                }
+                logger.info("REQUEST_STATE_SYNC from userId=%v sessionId=%v", message.sender.userId, message.sender.sessionId);
+                sendStateSync(dispatcher, s, message.sender);
+                return;
             }
             if (!currentPlayer_1 || currentPlayer_1.id !== message.sender.sessionId) {
                 return;
