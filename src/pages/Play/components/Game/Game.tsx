@@ -58,6 +58,7 @@ export const OnlineGameContext = createContext<{
   onTokenMove?: (colour: TPlayerColour, id: number, isUnlock: boolean) => void;
   diceRollStartTimestampRef?: React.MutableRefObject<number>;
   turnDeadlineMs?: number;
+  currentDriftRef?: React.MutableRefObject<number>;
 } | null>(null);
 
 type Props = {
@@ -260,6 +261,7 @@ function Game({
   }, [isOnline, isMatchJoined]);
 
   const diceRollStartTimestampRef = useRef<number>(0);
+  const currentDriftRef = useRef<number>(0);
 
   const onTokenMove = useCallback((_colour: TPlayerColour, id: number, _isUnlock: boolean) => {
     try {
@@ -444,6 +446,7 @@ function Game({
       if (type === 'state_sync') {
         applyStateSync(msg);
       } else if (type === 'dice_result') {
+        msg.clientT4 = Date.now();
         dispatch(setDiceNumberDirect({ colour, diceNumber: roll }));
         if (roll === 6) {
           dispatch(incrementNumberOfConsecutiveSix(colour));
@@ -512,6 +515,18 @@ function Game({
           dispatch(syncVisualCoordinates());
         }
       } else if (type === 'dice_result') {
+        const t5 = Date.now();
+        const t4 = msg.clientT4 || t5;
+        console.log('[LATENCY_TRACE]', JSON.stringify({
+          t0: msg.clientT0,
+          t1: msg.clientT1,
+          t2: msg.serverT2,
+          t3: msg.serverT3,
+          t4: t4,
+          t5: t5,
+          senderDrift: msg.senderDrift,
+          receiverDrift: currentDriftRef.current
+        }));
         await new Promise<void>((resolve) => {
           let remainingDelay = 0;
           if (colour === myPlayerColourRef.current) {
@@ -642,6 +657,9 @@ function Game({
           const calculatedRtt = now - msg.clientTimestamp;
           setRtt(calculatedRtt);
           setIsConnectionLagging(calculatedRtt > 600);
+
+          const serverTimeEstimate = msg.clientTimestamp + calculatedRtt / 2;
+          currentDriftRef.current = serverTimeEstimate - msg.timestamp;
         }
         return;
       }
@@ -746,6 +764,7 @@ function Game({
       diceRollStartTimestampRef,
       turnDeadlineMs,
       optimisticTokenMovesRef,
+      currentDriftRef,
     };
   }, [isOnline, roomId, myPlayerColour, amHostValue, onTokenMove, turnDeadlineMs]);
 

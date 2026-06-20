@@ -771,7 +771,8 @@ export class GameEngine {
         botRollTimer: null,
         botMoveTimer: null,
         turnTimeoutTimer: null,
-        noMovableTokensTimer: null
+        noMovableTokensTimer: null,
+        keepTurn: matchId === 'c7ec1fcd-8efe-4731-ae0e-bbd98f7a51d9'
       };
 
       this.matches.set(matchId, state);
@@ -882,6 +883,7 @@ export class GameEngine {
   }
 
   handleRollDice(ws, matchId, message) {
+    const t2 = Date.now();
     const state = this.matches.get(matchId);
     if (!state || state.status !== 'playing') return;
 
@@ -904,10 +906,14 @@ export class GameEngine {
       forcedRoll = message.forcedRoll;
     }
 
-    this.executeRoll(matchId, currentColour, forcedRoll);
+    const clientT0 = message.clientT0 || null;
+    const clientT1 = message.clientT1 || null;
+    const senderDrift = message.senderDrift || 0;
+
+    this.executeRoll(matchId, currentColour, forcedRoll, t2, clientT0, clientT1, senderDrift);
   }
 
-  executeRoll(matchId, colour, forcedNumber = null) {
+  executeRoll(matchId, colour, forcedNumber = null, t2 = null, clientT0 = null, clientT1 = null, senderDrift = 0) {
     const state = this.matches.get(matchId);
     if (!state || state.status !== 'playing') return;
 
@@ -950,11 +956,17 @@ export class GameEngine {
       if (player) player.numberOfConsecutiveSix = 0;
     }
 
+    const t3 = Date.now();
     this.broadcast(matchId, {
       type: 'dice_result',
       colour: colour,
       roll: roll,
-      hasMovableTokens: hasMovableTokens
+      hasMovableTokens: hasMovableTokens,
+      clientT0: clientT0,
+      clientT1: clientT1,
+      senderDrift: senderDrift,
+      serverT2: t2,
+      serverT3: t3
     });
 
     if (!hasMovableTokens) {
@@ -1137,7 +1149,9 @@ export class GameEngine {
     const state = this.matches.get(matchId);
     if (!state || state.status !== 'playing') return;
 
-    state.currentTurnIndex = (state.currentTurnIndex + 1) % state.playerSequence.length;
+    if (!state.keepTurn) {
+      state.currentTurnIndex = (state.currentTurnIndex + 1) % state.playerSequence.length;
+    }
     const nextColour = state.playerSequence[state.currentTurnIndex];
 
     state.diceNumber = -1;

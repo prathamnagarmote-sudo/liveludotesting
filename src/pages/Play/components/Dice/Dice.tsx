@@ -78,6 +78,7 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
 
   const handleDiceClick = useCallback(() => {
     if (isDiceDisabled) return;
+    const t0 = Date.now();
     playDiceRollSound();
 
     let forcedNumber: number | null = null;
@@ -95,8 +96,12 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
       }
 
       try {
+        const t1 = Date.now();
         sendGameMessage('roll_dice', {
-          forcedRoll: forcedNumber !== null ? forcedNumber : undefined
+          forcedRoll: forcedNumber !== null ? forcedNumber : undefined,
+          clientT0: t0,
+          clientT1: t1,
+          senderDrift: onlineContext.currentDriftRef?.current || 0
         });
       } catch (err) {
         console.error("Failed to send dice roll input:", err);
