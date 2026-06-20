@@ -339,8 +339,20 @@ function Game({
       setIsMatchJoined(true);
     };
 
+    // ─── Helper: stop all visual dice rolling states ──────────────────────────
+    const stopAllDiceAnimations = () => {
+      const colours: TPlayerColour[] = ['blue', 'green', 'red', 'yellow'];
+      colours.forEach(c => {
+        try {
+          dispatch(setIsPlaceholderShowing({ colour: c, isPlaceholderShowing: false }));
+          dispatch(setIsVisualRolling({ colour: c, isVisualRolling: false }));
+        } catch (e) {}
+      });
+    };
+
     // ─── Helper: apply turn transition on every client ─────────────────────────
     const applyTurnTransition = (nextColour: TPlayerColour) => {
+      stopAllDiceAnimations();
       dispatch(deactivateTokensOfAllPlayers());
       dispatch(setCurrentPlayerColour(nextColour));
     };
@@ -445,6 +457,7 @@ function Game({
     };
 
     const applyStateSync = (parsedState: any) => {
+      stopAllDiceAnimations();
       if (playersRegisteredInitiallyRef.current) {
         initializeGame(parsedState.players);
       } else {
@@ -528,10 +541,12 @@ function Game({
         applyTurnTransition(msg.nextTurnColour);
       } else if (type === 'match_end') {
         toast.success(`Match ended! Winner: ${msg.winnerColour}`);
+        stopAllDiceAnimations();
         dispatch(declareForfeit({ losingColour: msg.winnerColour === 'blue' ? 'green' : 'blue' }));
       } else if (type === 'action_rejected') {
         console.warn("[ONLINE] Action rejected by server:", msg.reason);
         toast.error(`Invalid action: ${msg.reason}`);
+        stopAllDiceAnimations();
       }
     };
 
