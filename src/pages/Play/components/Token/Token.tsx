@@ -70,7 +70,7 @@ function Token({ colour, id, tokenClickData }: Props) {
 
   const onlineContext = useContext(OnlineGameContext);
 
-  const unlock = () => {
+  const unlock = useCallback(() => {
     dispatch(setIsAnyTokenMoving(true));
     setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
     dispatch(unlockAndAlignTokens({ colour, id }));
@@ -78,7 +78,7 @@ function Token({ colour, id, tokenClickData }: Props) {
     setTimeout(() => {
       dispatch(setIsAnyTokenMoving(false));
     }, FORWARD_TOKEN_TRANSITION_TIME);
-  };
+  }, [colour, id, dispatch, token]);
 
   // OFFLINE-only: full token move including post-move turn change logic.
   // In ONLINE mode, turn changes come EXCLUSIVELY from OpCode 6 — never from local logic.
@@ -105,22 +105,37 @@ function Token({ colour, id, tokenClickData }: Props) {
       if (onlineContext?.isOnline) {
         if (isActive && diceNumber !== -1 && diceNumber) {
           if (colour === onlineContext.myPlayerColour) {
-            setIsPendingMove(true);
             dispatch(deactivateTokensOfAllPlayers());
+            
+            // Optimistic visual animation
+            if (isLocked) {
+              unlock();
+            } else {
+              moveAndCapture(token, diceNumber);
+            }
+
+            const moveKey = `${colour}-${id}`;
+            if (onlineContext.optimisticTokenMovesRef) {
+              onlineContext.optimisticTokenMovesRef.current.add(moveKey);
+            }
+
             try {
               onlineContext.onTokenMove?.(colour, id, isLocked);
             } catch (err) {
-              setIsPendingMove(false);
+              if (onlineContext.optimisticTokenMovesRef) {
+                onlineContext.optimisticTokenMovesRef.current.delete(moveKey);
+              }
               console.error("Failed to execute token move:", err);
               toast.error("Failed to sync token move with server.");
             }
           }
         }
       } else {
+        if (isLocked && isActive && diceNumber !== -1 && diceNumber) unlock();
         executeTokenMoveOffline();
       }
     }
-  }, [colour, executeTokenMoveOffline, id, tokenClickData, onlineContext, isLocked, isActive, diceNumber, dispatch, token]);
+  }, [colour, executeTokenMoveOffline, id, tokenClickData, onlineContext, isLocked, isActive, diceNumber, dispatch, token, moveAndCapture, unlock]);
 
   const handleTokenClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
     e.stopPropagation();
@@ -128,12 +143,26 @@ function Token({ colour, id, tokenClickData }: Props) {
     if (onlineContext?.isOnline) {
       if (isActive && diceNumber !== -1 && diceNumber) {
         if (colour === onlineContext.myPlayerColour) {
-          setIsPendingMove(true);
           dispatch(deactivateTokensOfAllPlayers());
+
+          // Optimistic visual animation
+          if (isLocked) {
+            unlock();
+          } else {
+            moveAndCapture(token, diceNumber);
+          }
+
+          const moveKey = `${colour}-${id}`;
+          if (onlineContext.optimisticTokenMovesRef) {
+            onlineContext.optimisticTokenMovesRef.current.add(moveKey);
+          }
+
           try {
             onlineContext.onTokenMove?.(colour, id, isLocked);
           } catch (err) {
-            setIsPendingMove(false);
+            if (onlineContext.optimisticTokenMovesRef) {
+              onlineContext.optimisticTokenMovesRef.current.delete(moveKey);
+            }
             console.error("Failed to execute token move:", err);
             toast.error("Failed to sync token move with server.");
           }

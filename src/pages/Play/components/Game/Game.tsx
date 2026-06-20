@@ -91,6 +91,7 @@ function Game({
     useSelector((state: RootState) => state.players);
   const playersRegisteredInitiallyRef = useRef(true);
   const gameInactiveStartTime = useRef(0);
+  const optimisticTokenMovesRef = useRef<Set<string>>(new Set());
   const navigate = useNavigate();
   const moveAndCapture = useMoveAndCaptureToken();
   useGameTimer();
@@ -308,6 +309,27 @@ function Game({
     let latestProcessedSeq = 0;
     let pendingStateSync: any = null;
 
+    let previousIsAnyTokenMoving = store.getState().players.isAnyTokenMoving;
+    let previousIsAnyDiceRolling = store.getState().dice.dice.some(d => d.isVisualRolling);
+
+    const unsubscribeStore = store.subscribe(() => {
+      const state = store.getState();
+      const currentIsAnyTokenMoving = state.players.isAnyTokenMoving;
+      const currentIsAnyDiceRolling = state.dice.dice.some(d => d.isVisualRolling);
+
+      const animationFinished = (previousIsAnyTokenMoving || previousIsAnyDiceRolling) && 
+                                  (!currentIsAnyTokenMoving && !currentIsAnyDiceRolling);
+
+      previousIsAnyTokenMoving = currentIsAnyTokenMoving;
+      previousIsAnyDiceRolling = currentIsAnyDiceRolling;
+
+      if (animationFinished && pendingStateSync) {
+        console.log('[ONLINE] Store subscription: Animations finished. Applying buffered state_sync:', pendingStateSync.sequenceNumber);
+        applyStateSync(pendingStateSync);
+        pendingStateSync = null;
+      }
+    });
+
     // ─── Game Initialization ───────────────────────────────────────────────────
     const initializeGame = (playersList: any[]) => {
       if (!playersRegisteredInitiallyRef.current) return;
@@ -425,20 +447,27 @@ function Game({
 
       console.log('[ALL] Applying token move result:', colour, data.id);
 
-      if (data.isUnlock) {
-        dispatch(setIsAnyTokenMoving(true));
-        setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
-        dispatch(unlockAndAlignTokens({ colour, id: data.id }));
-        dispatch(deactivateAllTokens(colour));
-        await new Promise<void>((resolve) => {
-          setTimeout(() => {
-            dispatch(setIsAnyTokenMoving(false));
-            resolve();
-          }, FORWARD_TOKEN_TRANSITION_TIME);
-        });
+      const moveKey = `${colour}-${data.id}`;
+      const isOptimistic = optimisticTokenMovesRef.current.has(moveKey);
+      if (isOptimistic) {
+        optimisticTokenMovesRef.current.delete(moveKey);
+        console.log('[ONLINE] Skipping animation for locally executed optimistic move:', moveKey);
       } else {
-        // Pass exact server-provided path coordinates
-        await moveAndCapture(token, data.path.length, data.path);
+        if (data.isUnlock) {
+          dispatch(setIsAnyTokenMoving(true));
+          setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
+          dispatch(unlockAndAlignTokens({ colour, id: data.id }));
+          dispatch(deactivateAllTokens(colour));
+          await new Promise<void>((resolve) => {
+            setTimeout(() => {
+              dispatch(setIsAnyTokenMoving(false));
+              resolve();
+            }, FORWARD_TOKEN_TRANSITION_TIME);
+          });
+        } else {
+          // Pass exact server-provided path coordinates
+          await moveAndCapture(token, data.path.length, data.path);
+        }
       }
 
       // Authoritative reconciliation for captures
@@ -521,8 +550,10 @@ function Game({
           allClientsApplyDiceResult(msg, resolve);
         });
 
+        const isMoving = store.getState().players.isAnyTokenMoving || 
+                         store.getState().dice.dice.some(d => d.isVisualRolling);
         // Apply buffered state sync if animation finished and not moving tokens
-        if (pendingStateSync && !store.getState().players.isAnyTokenMoving) {
+        if (pendingStateSync && !isMoving) {
           console.log('[ONLINE] Dice animation finished. Applying buffered state_sync:', pendingStateSync.sequenceNumber);
           applyStateSync(pendingStateSync);
           pendingStateSync = null;
@@ -530,8 +561,10 @@ function Game({
       } else if (type === 'token_moved') {
         await allClientsApplyTokenMove(msg);
 
-        // Apply buffered state sync if animation finished
-        if (pendingStateSync) {
+        const isMoving = store.getState().players.isAnyTokenMoving || 
+                         store.getState().dice.dice.some(d => d.isVisualRolling);
+        // Apply buffered state sync if animation finished and no animations running
+        if (pendingStateSync && !isMoving) {
           console.log('[ONLINE] Token animation finished. Applying buffered state_sync:', pendingStateSync.sequenceNumber);
           applyStateSync(pendingStateSync);
           pendingStateSync = null;
@@ -554,6 +587,7 @@ function Game({
 
     return () => {
       unsubscribe();
+      unsubscribeStore();
       ws.removeEventListener('open', sendJoinMessage);
       disconnectGameServer();
     };
@@ -605,6 +639,7 @@ function Game({
       onTokenMove,
       diceRollStartTimestampRef,
       turnDeadlineMs,
+      optimisticTokenMovesRef,
     };
   }, [isOnline, roomId, myPlayerColour, amHostValue, onTokenMove, turnDeadlineMs]);
 
