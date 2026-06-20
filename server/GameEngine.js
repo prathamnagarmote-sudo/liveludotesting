@@ -702,6 +702,7 @@ export class GameEngine {
   }
 
   handleMessage(ws, matchId, message) {
+    const startTime = Date.now();
     const { type } = message;
 
     if (type === 'join_match') {
@@ -713,9 +714,24 @@ export class GameEngine {
     } else if (type === 'quit_game') {
       this.handleQuitGame(ws, matchId, message);
     } else if (type === 'ping') {
-      ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+      ws.send(JSON.stringify({ 
+        type: 'pong', 
+        clientTimestamp: message.clientTimestamp, 
+        timestamp: Date.now() 
+      }));
     } else if (type === 'request_state_sync') {
       this.handleStateSyncRequest(ws, matchId, message);
+    } else if (type === 'request_rematch') {
+      this.handleRequestRematch(ws, matchId, message);
+    } else if (type === 'accept_rematch') {
+      this.handleAcceptRematch(ws, matchId, message);
+    } else if (type === 'decline_rematch') {
+      this.handleDeclineRematch(ws, matchId, message);
+    }
+
+    const duration = Date.now() - startTime;
+    if (type !== 'ping') {
+      console.log(`[LATENCY] Server processing time for "${type}": ${duration}ms`);
     }
   }
 
@@ -765,10 +781,14 @@ export class GameEngine {
     state.clients.set(colour, ws);
     console.log(`[GameEngine] Player ${name} (${colour}) joined match: ${matchId}`);
 
-    // If game is already running or finished, just catch up
     if (state.status !== 'waiting') {
       console.log(`[GameEngine] Reconnecting player ${colour} to running match.`);
       
+      if (state.reconnectTimers && state.reconnectTimers[colour]) {
+        clearTimeout(state.reconnectTimers[colour]);
+        delete state.reconnectTimers[colour];
+      }
+
       // Update connection ID for the player
       const playerObj = state.players.find(p => p.colour === colour);
       if (playerObj) {
@@ -1056,7 +1076,9 @@ export class GameEngine {
         type: 'match_end',
         winnerColour: colour
       });
-      this.cleanupMatch(matchId);
+      state.cleanupTimer = setTimeout(() => {
+        this.cleanupMatch(matchId);
+      }, 20000);
       return;
     }
 
@@ -1259,7 +1281,9 @@ export class GameEngine {
         type: 'match_end',
         winnerColour: winner
       });
-      this.cleanupMatch(matchId);
+      state.cleanupTimer = setTimeout(() => {
+        this.cleanupMatch(matchId);
+      }, 20000);
     } else {
       // Sync remaining players
       this.broadcast(matchId, {
@@ -1282,6 +1306,88 @@ export class GameEngine {
         this.nextTurn(matchId);
       }
     }
+  }
+
+  handleRequestRematch(ws, matchId, message) {
+    const state = this.matches.get(matchId);
+    if (!state || state.status !== 'ended') return;
+    const { colour } = message;
+    this.broadcast(matchId, {
+      type: 'rematch_requested',
+      colour
+    });
+  }
+
+  handleAcceptRematch(ws, matchId, message) {
+    const state = this.matches.get(matchId);
+    if (!state || state.status !== 'ended') return;
+    const { colour } = message;
+
+    if (!state.rematchAccepted) state.rematchAccepted = [];
+    if (!state.rematchAccepted.includes(colour)) {
+      state.rematchAccepted.push(colour);
+    }
+
+    this.broadcast(matchId, {
+      type: 'rematch_accepted',
+      colour
+    });
+
+    const activeHumanColours = state.players.filter(p => !p.isBot && !p.hasQuit).map(p => p.colour);
+    const allAccepted = activeHumanColours.every(col => state.rematchAccepted.includes(col));
+
+    if (allAccepted && activeHumanColours.length > 0) {
+      if (state.cleanupTimer) {
+        clearTimeout(state.cleanupTimer);
+        delete state.cleanupTimer;
+      }
+
+      state.status = 'playing';
+      state.diceNumber = -1;
+      state.hasRolled = false;
+      state.consecutiveSixes = 0;
+      state.currentTurnIndex = 0;
+      state.turnDeadlineMs = Date.now() + 15000;
+      state.botRollTimer = null;
+      state.botMoveTimer = null;
+      state.noMovableTokensTimer = null;
+      state.rematchAccepted = [];
+
+      state.players.forEach(p => {
+        p.missedTurns = 0;
+        p.numberOfConsecutiveSix = 0;
+        p.tokens = genInitialTokens(p.colour);
+      });
+
+      this.broadcast(matchId, {
+        type: 'state_sync',
+        roomId: state.roomId,
+        players: state.players,
+        playerSequence: state.playerSequence,
+        currentTurnColour: state.playerSequence[state.currentTurnIndex],
+        diceNumber: state.diceNumber,
+        hasRolled: state.hasRolled,
+        consecutiveSixes: state.consecutiveSixes,
+        turnDeadlineMs: state.turnDeadlineMs,
+        status: state.status
+      });
+
+      this.startTurnTimeoutTimer(matchId);
+      this.processBotTurnIfNeeded(matchId);
+    }
+  }
+
+  handleDeclineRematch(ws, matchId, message) {
+    const state = this.matches.get(matchId);
+    if (!state || state.status !== 'ended') return;
+    const { colour } = message;
+
+    this.broadcast(matchId, {
+      type: 'rematch_declined',
+      colour
+    });
+
+    this.cleanupMatch(matchId);
   }
 
   handleDisconnect(ws, matchId) {
@@ -1340,6 +1446,9 @@ export class GameEngine {
     clearTimeout(state.botRollTimer);
     clearTimeout(state.botMoveTimer);
     clearTimeout(state.noMovableTokensTimer);
+    if (state.cleanupTimer) {
+      clearTimeout(state.cleanupTimer);
+    }
     
     if (state.reconnectTimers) {
       Object.values(state.reconnectTimers).forEach(timer => clearTimeout(timer));
@@ -1350,3 +1459,24 @@ export class GameEngine {
     console.log(`[GameEngine] Cleaned up match: ${matchId}`);
   }
 }
+
+export {
+  areCoordsEqual,
+  findCoordIndex,
+  getIntegersBetween,
+  expandTokenPath,
+  isCoordInHomeEntryPathForColour,
+  isCoordASafeSpot,
+  getHomeCoordForColour,
+  getDistanceInTokenPath,
+  getAvailableSteps,
+  countTokensAtCoord,
+  isTokenMovable,
+  computeMoveResult,
+  genInitialTokens,
+  areTokensOnOverlappingPaths,
+  getDistanceBetweenTokens,
+  isTokenAhead,
+  getFinalCoord,
+  selectBestBotToken
+};

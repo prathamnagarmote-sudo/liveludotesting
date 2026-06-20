@@ -14,7 +14,7 @@ import { OnlineGameContext } from '../Game/Game';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '../../../../state/store';
 import { restartGameThunk } from '../../../../state/thunks/restartGameThunk';
-import { getNakamaSocket } from '../../../../services/nakama';
+import { sendGameMessage } from '../../../../services/socket';
 
 type Props = {
   players: TPlayer[];
@@ -184,7 +184,7 @@ function GameFinishedScreen({ players }: Props) {
 
   const handleRequestRematch = () => {
     if (onlineContext) {
-      getNakamaSocket()?.sendMatchState(onlineContext.roomId, 101, JSON.stringify({ colour: onlineContext.myPlayerColour }));
+      sendGameMessage('request_rematch', { colour: onlineContext.myPlayerColour });
       setRematchState('waiting_for_others');
       setAcceptedPlayers([onlineContext.myPlayerColour]);
     } else {
@@ -209,7 +209,7 @@ function GameFinishedScreen({ players }: Props) {
 
   const handleAcceptRematch = () => {
     if (onlineContext) {
-      getNakamaSocket()?.sendMatchState(onlineContext.roomId, 102, JSON.stringify({ colour: onlineContext.myPlayerColour }));
+      sendGameMessage('accept_rematch', { colour: onlineContext.myPlayerColour });
       setRematchState('waiting_for_others');
       setAcceptedPlayers(prev => {
         const next = prev.includes(onlineContext.myPlayerColour) ? prev : [...prev, onlineContext.myPlayerColour];
@@ -227,7 +227,7 @@ function GameFinishedScreen({ players }: Props) {
 
   const handleRejectRematch = () => {
     if (onlineContext) {
-      getNakamaSocket()?.sendMatchState(onlineContext.roomId, 103, JSON.stringify({ colour: onlineContext.myPlayerColour }));
+      sendGameMessage('decline_rematch', { colour: onlineContext.myPlayerColour });
     }
     setRematchState('idle');
   };

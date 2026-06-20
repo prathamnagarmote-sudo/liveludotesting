@@ -91,6 +91,34 @@ function Game({
   const { playerSequence, isGameEnded, currentPlayerColour, players } =
     useSelector((state: RootState) => state.players);
   const playersRegisteredInitiallyRef = useRef(true);
+  const [rtt, setRtt] = useState<number | null>(null);
+  const [latencies, setLatencies] = useState<number[]>([]);
+  const [isConnectionLagging, setIsConnectionLagging] = useState<boolean>(false);
+  const tokenMoveStartTimestampRef = useRef<number>(0);
+  const lastPongReceivedTimeRef = useRef<number>(Date.now());
+
+  const getPercentile = (percentile: number): number => {
+    if (latencies.length === 0) return 0;
+    const sorted = [...latencies].sort((a, b) => a - b);
+    const index = Math.ceil((percentile / 100) * sorted.length) - 1;
+    return sorted[Math.max(0, index)];
+  };
+
+  const p50 = getPercentile(50);
+  const p95 = getPercentile(95);
+  const p99 = getPercentile(99);
+
+  const recordLatency = useCallback((lat: number) => {
+    setLatencies(prev => [...prev, lat]);
+  }, []);
+
+  const connectionQualityColor = useMemo(() => {
+    if (isConnectionLagging) return '#ff4d4d';
+    if (rtt === null) return '#ffca28';
+    if (rtt < 150) return '#32cd32';
+    if (rtt < 350) return '#ff9800';
+    return '#ff4d4d';
+  }, [rtt, isConnectionLagging]);
   const gameInactiveStartTime = useRef(0);
   const optimisticTokenMovesRef = useRef<Set<string>>(new Set());
   const navigate = useNavigate();
@@ -207,21 +235,39 @@ function Game({
     return () => clearTimeout(timeoutId);
   }, [isOnline, isMatchJoined, navigate]);
 
+  useEffect(() => {
+    if (!isOnline || !isMatchJoined) return;
+
+    lastPongReceivedTimeRef.current = Date.now();
+    setIsConnectionLagging(false);
+
+    const intervalId = setInterval(() => {
+      try {
+        sendGameMessage('ping', { clientTimestamp: Date.now() });
+      } catch (e) {}
+
+      if (Date.now() - lastPongReceivedTimeRef.current > 9000) {
+        setIsConnectionLagging(true);
+      }
+    }, 3000);
+
+    return () => clearInterval(intervalId);
+  }, [isOnline, isMatchJoined]);
+
   const diceRollStartTimestampRef = useRef<number>(0);
 
   const onTokenMove = useCallback((_colour: TPlayerColour, id: number, _isUnlock: boolean) => {
     try {
       console.log('[CLIENT] Sending token move input to game server:', _colour, id);
+      tokenMoveStartTimestampRef.current = Date.now();
       sendGameMessage('move_token', {
-        matchId: roomIdRef.current,
-        playerId: myPlayerId,
         tokenId: id
       });
     } catch (err) {
       console.error('[CLIENT] Failed to send token move input:', err);
       toast.error("Failed to sync token move with server.");
     }
-  }, [myPlayerId]);
+  }, []);
 
   // Handle Online Match turn coordination
   // ARCHITECTURE: Host-Authoritative Relay
@@ -483,6 +529,16 @@ function Game({
             setTimeout(completeVisualRoll, remainingDelay);
           }
         });
+
+        if (colour === myPlayerColourRef.current) {
+          const clickTime = diceRollStartTimestampRef.current;
+          if (clickTime > 0) {
+            const inputToSettled = Date.now() - clickTime;
+            console.log(`[LATENCY] dice_result input-to-settled: ${inputToSettled}ms`);
+            recordLatency(inputToSettled);
+            diceRollStartTimestampRef.current = 0;
+          }
+        }
       } else if (type === 'token_moved') {
         const player = store.getState().players.players.find(p => p.colour === colour);
         if (player) {
@@ -511,6 +567,16 @@ function Game({
                 dispatch(setIsAnyTokenMoving(false));
               }
             }
+          }
+        }
+
+        if (colour === myPlayerColourRef.current) {
+          const clickTime = tokenMoveStartTimestampRef.current;
+          if (clickTime > 0) {
+            const inputToSettled = Date.now() - clickTime;
+            console.log(`[LATENCY] token_moved input-to-settled: ${inputToSettled}ms`);
+            recordLatency(inputToSettled);
+            tokenMoveStartTimestampRef.current = 0;
           }
         }
       }
@@ -558,6 +624,29 @@ function Game({
 
     const handleIncomingMessage = (msg: any) => {
       const { type, sequenceNumber } = msg;
+
+      if (type === 'pong') {
+        const now = Date.now();
+        lastPongReceivedTimeRef.current = now;
+        if (typeof msg.clientTimestamp === 'number') {
+          const calculatedRtt = now - msg.clientTimestamp;
+          setRtt(calculatedRtt);
+          setIsConnectionLagging(calculatedRtt > 600);
+        }
+        return;
+      }
+
+      if (type === 'rematch_requested' || type === 'rematch_accepted' || type === 'rematch_declined') {
+        let opCode = 101;
+        if (type === 'rematch_accepted') opCode = 102;
+        if (type === 'rematch_declined') opCode = 103;
+
+        const event = new CustomEvent('nakama-rematch-event', {
+          detail: { opCode, parsed: { colour: msg.colour } }
+        });
+        document.dispatchEvent(event);
+        return;
+      }
 
       if (sequenceNumber && sequenceNumber <= latestProcessedSeq) {
         console.warn('[ONLINE] Ignoring stale message with seq:', sequenceNumber, 'current latest:', latestProcessedSeq);
@@ -675,6 +764,19 @@ function Game({
           } as React.CSSProperties
         }
       >
+        {isOnline && (
+          <div className={styles.latencyHud}>
+            <div className={styles.hudRow}>
+              <span className={styles.hudDot} style={{ color: connectionQualityColor, backgroundColor: connectionQualityColor }} />
+              <span>{isConnectionLagging ? 'Reconnecting...' : `RTT: ${rtt !== null ? `${rtt}ms` : 'Calculating...'}`}</span>
+            </div>
+            {latencies.length > 0 && (
+              <div className={styles.hudStats}>
+                <span>p50: {p50}ms | p95: {p95}ms | p99: {p99}ms ({latencies.length} actions)</span>
+              </div>
+            )}
+          </div>
+        )}
         <div className={styles.boardWrapper}>
           <ScoreBoard />
           <Board onDiceClick={handleDiceRoll} />

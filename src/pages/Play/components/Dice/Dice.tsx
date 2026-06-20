@@ -96,8 +96,6 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
 
       try {
         sendGameMessage('roll_dice', {
-          matchId: onlineContext.roomId,
-          playerId: onlineContext.myPlayerColour,
           forcedRoll: forcedNumber !== null ? forcedNumber : undefined
         });
       } catch (err) {
