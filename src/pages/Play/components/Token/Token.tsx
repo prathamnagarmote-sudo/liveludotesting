@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState, useContext } from 'react';
-import { deactivateAllTokens, setIsAnyTokenMoving } from '../../../../state/slices/playersSlice';
+import { deactivateAllTokens, setIsAnyTokenMoving, deactivateTokensOfAllPlayers } from '../../../../state/slices/playersSlice';
 import { type TPlayerColour, type TTokenClickData } from '../../../../types';
 import { type TToken } from '../../../../types';
 import { useDispatch, useSelector } from 'react-redux';
@@ -99,21 +99,9 @@ function Token({ colour, id, tokenClickData }: Props) {
       if (onlineContext?.isOnline) {
         if (isActive && diceNumber !== -1 && diceNumber) {
           if (colour === onlineContext.myPlayerColour) {
-            dispatch(deactivateAllTokens(colour));
+            dispatch(deactivateTokensOfAllPlayers());
             try {
               onlineContext.onTokenMove?.(colour, id, isLocked);
-              const moveKey = `${colour}_${id}`;
-              onlineContext.optimisticTokenMovesRef?.current.add(moveKey);
-              if (isLocked) {
-                dispatch(setIsAnyTokenMoving(true));
-                setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
-                dispatch(unlockAndAlignTokens({ colour, id }));
-                setTimeout(() => {
-                  dispatch(setIsAnyTokenMoving(false));
-                }, FORWARD_TOKEN_TRANSITION_TIME);
-              } else {
-                moveAndCapture(token, diceNumber);
-              }
             } catch (err) {
               console.error("Failed to execute token move:", err);
               toast.error("Failed to sync token move with server.");
@@ -124,7 +112,7 @@ function Token({ colour, id, tokenClickData }: Props) {
         executeTokenMoveOffline();
       }
     }
-  }, [colour, executeTokenMoveOffline, id, tokenClickData, onlineContext, isLocked, isActive, diceNumber, dispatch, moveAndCapture, token]);
+  }, [colour, executeTokenMoveOffline, id, tokenClickData, onlineContext, isLocked, isActive, diceNumber, dispatch, token]);
 
   const handleTokenClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
     e.stopPropagation();
@@ -132,21 +120,9 @@ function Token({ colour, id, tokenClickData }: Props) {
     if (onlineContext?.isOnline) {
       if (isActive && diceNumber !== -1 && diceNumber) {
         if (colour === onlineContext.myPlayerColour) {
-          dispatch(deactivateAllTokens(colour));
+          dispatch(deactivateTokensOfAllPlayers());
           try {
             onlineContext.onTokenMove?.(colour, id, isLocked);
-            const moveKey = `${colour}_${id}`;
-            onlineContext.optimisticTokenMovesRef?.current.add(moveKey);
-            if (isLocked) {
-              dispatch(setIsAnyTokenMoving(true));
-              setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
-              dispatch(unlockAndAlignTokens({ colour, id }));
-              setTimeout(() => {
-                dispatch(setIsAnyTokenMoving(false));
-              }, FORWARD_TOKEN_TRANSITION_TIME);
-            } else {
-              moveAndCapture(token, diceNumber);
-            }
           } catch (err) {
             console.error("Failed to execute token move:", err);
             toast.error("Failed to sync token move with server.");

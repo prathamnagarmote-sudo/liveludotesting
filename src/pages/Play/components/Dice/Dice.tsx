@@ -8,7 +8,7 @@ import { useCallback, useEffect, useContext, useRef } from 'react';
 import { type TPlayerColour } from '../../../../types';
 import { useDispatch, useSelector } from 'react-redux';
 import { OnlineGameContext } from '../Game/Game';
-import { getNakamaSocket } from '../../../../services/nakama';
+import { sendGameMessage } from '../../../../services/socket';
 import type { AppDispatch, RootState } from '../../../../state/store';
 import { rollDiceThunk } from '../../../../state/thunks/rollDiceThunk';
 import { setIsPlaceholderShowing, setIsVisualRolling } from '../../../../state/slices/diceSlice';
@@ -94,10 +94,11 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
       }
 
       try {
-        // Send roll request input to Nakama (OpCode 100)
-        // forcedRoll is a dev/test hint — the server ignores it in production
-        const payload = forcedNumber !== null ? JSON.stringify({ forcedRoll: forcedNumber }) : JSON.stringify({});
-        getNakamaSocket().sendMatchState(onlineContext.roomId, 100, payload);
+        sendGameMessage('roll_dice', {
+          matchId: onlineContext.roomId,
+          playerId: onlineContext.myPlayerColour,
+          forcedRoll: forcedNumber !== null ? forcedNumber : undefined
+        });
       } catch (err) {
         console.error("Failed to send dice roll input:", err);
         dispatch(setIsPlaceholderShowing({ colour, isPlaceholderShowing: false }));

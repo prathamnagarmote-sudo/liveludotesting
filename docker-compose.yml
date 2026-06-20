@@ -25,7 +25,7 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "7350:7350"
+      - "8350:7350"
     volumes:
       - ./nakama/data/modules:/nakama/data/modules
 volumes:

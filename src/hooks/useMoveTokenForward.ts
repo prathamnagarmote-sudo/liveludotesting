@@ -4,7 +4,7 @@ import {
   markTokenAsReachedHome,
   setIsAnyTokenMoving,
 } from '../state/slices/playersSlice';
-import { type TToken } from '../types';
+import { type TToken, type TCoordinate } from '../types';
 import { ERRORS } from '../utils/errors';
 import type { AppDispatch, RootState } from '../state/store';
 import { areCoordsEqual } from '../game/coords/logic';
@@ -47,12 +47,12 @@ export const useMoveTokenForward = () => {
   const store = useStore<RootState>();
 
   return useCallback(
-    (diceNumber: number, token: TToken): Promise<TMoveTokenCompletionData> => {
+    (diceNumber: number, token: TToken, customPath?: TCoordinate[]): Promise<TMoveTokenCompletionData> => {
       return new Promise((resolve) => {
         if (diceNumber < 0) throw new Error(ERRORS.numberOfStepsNegative());
         const { colour, id, coordinates, isLocked } = token;
         if (isLocked) throw new Error(ERRORS.lockedToken(colour, id));
-        const tokenPath = tokenPaths[colour];
+        const tokenPath = customPath ? [coordinates, ...customPath] : tokenPaths[colour];
         const players = store.getState().players.players;
         dispatch(deactivateAllTokens(colour));
         setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
@@ -88,7 +88,7 @@ export const useMoveTokenForward = () => {
         const tokenEl = document.getElementById(getTokenDOMId(colour, id));
         if (!tokenEl) throw new Error(ERRORS.tokenDoesNotExist(colour, id));
 
-        const initialCoordinateIndex = tokenPath.findIndex((v) => areCoordsEqual(v, coordinates));
+        const initialCoordinateIndex = customPath ? 0 : tokenPath.findIndex((v) => areCoordsEqual(v, coordinates));
         let i = initialCoordinateIndex;
         let count = 0;
 

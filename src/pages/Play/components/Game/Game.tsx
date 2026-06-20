@@ -37,14 +37,12 @@ import { useGameTimer } from '../../../../hooks/useGameTimer';
 import ScoreBoard from '../ScoreBoard/ScoreBoard';
 import styles from './Game.module.css';
 import menuIcon from '../../../../assets/menu.svg';
-import { getNakamaSocket, ensureSocketConnected } from '../../../../services/nakama';
+import { connectGameServer, disconnectGameServer, sendGameMessage, addGameMessageListener } from '../../../../services/socket';
 import { toast } from 'react-toastify';
 import { unlockAndAlignTokens } from '../../../../state/thunks/unlockAndAlignTokens';
 import { setTokenTransitionTime } from '../../../../utils/setTokenTransitionTime';
 import { FORWARD_TOKEN_TRANSITION_TIME } from '../../../../game/tokens/constants';
-import { isTokenMovable } from '../../../../game/tokens/logic';
-import { areCoordsEqual } from '../../../../game/coords/logic';
-import type { MatchData } from '@heroiclabs/nakama-js';
+
 
 
 export const EXIT_MESSAGE = 'Are you sure you want to exit? Any progress made will be lost.';
@@ -101,9 +99,7 @@ function Game({
   const [myPlayerColour, setMyPlayerColour] = useState<TPlayerColour>(canonicalColour || 'blue');
   const [isMatchJoined, setIsMatchJoined] = useState(!isOnline);
   usePageLeaveBlocker(isMatchJoined && !isGameEnded && import.meta.env.PROD);
-  const [localSessionId, setLocalSessionId] = useState<string>('');
   const [turnDeadlineMs, setTurnDeadlineMs] = useState<number>(Date.now() + 15000);
-  const matchJoinedRef = useRef(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [music, setMusic] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -209,22 +205,21 @@ function Game({
     return () => clearTimeout(timeoutId);
   }, [isOnline, isMatchJoined, navigate]);
 
-  const optimisticTokenMovesRef = useRef<Set<string>>(new Set());
   const diceRollStartTimestampRef = useRef<number>(0);
-  const messageQueueRef = useRef<any[]>([]);
-  const isProcessingQueueRef = useRef<boolean>(false);
 
   const onTokenMove = useCallback((_colour: TPlayerColour, id: number, _isUnlock: boolean) => {
     try {
-      const socket = getNakamaSocket();
-      const currentRoomId = roomIdRef.current;
-      console.log('[CLIENT] Sending token move input to server:', _colour, id);
-      socket.sendMatchState(currentRoomId, 101, JSON.stringify({ id }));
+      console.log('[CLIENT] Sending token move input to game server:', _colour, id);
+      sendGameMessage('move_token', {
+        matchId: roomIdRef.current,
+        playerId: myPlayerId,
+        tokenId: id
+      });
     } catch (err) {
       console.error('[CLIENT] Failed to send token move input:', err);
       toast.error("Failed to sync token move with server.");
     }
-  }, []);
+  }, [myPlayerId]);
 
   // Handle Online Match turn coordination
   // ARCHITECTURE: Host-Authoritative Relay
@@ -236,33 +231,82 @@ function Game({
   useEffect(() => {
     if (!isOnline || (!matchedToken && !matchId)) return;
 
-    let socket: ReturnType<typeof getNakamaSocket>;
-    try {
-      socket = getNakamaSocket();
-    } catch(e) {
-      navigate('/setup');
-      return;
+    // Connect to custom game server WebSocket
+    const ws = connectGameServer(matchId!);
+
+    // Get current user profile from localStorage
+    const storedUser = localStorage.getItem('ludo_user');
+    const currentUser = storedUser ? JSON.parse(storedUser) : null;
+
+    // Deterministically map matched users to color sequence (sorted alphabetically by user ID)
+    const sortedUsers = [...(matchedUsers || [])].sort((a, b) => 
+      a.presence.user_id.localeCompare(b.presence.user_id)
+    );
+    const colors: TPlayerColour[] = ['blue', 'green', 'red', 'yellow'];
+    const mappedPlayers = sortedUsers.map((m, idx) => {
+      const props = m.string_properties || {};
+      const name = props.name || props.userName || m.presence.username || `Player ${idx + 1}`;
+      return {
+        id: m.presence.session_id,
+        userId: m.presence.user_id,
+        isBot: false,
+        name: name,
+        avatarUrl: props.avatarurl || props.avatarUrl || props.avatar_url || '',
+        level: 1,
+        color: colors[idx]
+      };
+    });
+
+    // Fill remaining slots with bots to hit target size of 2
+    const size = 2;
+    const botProfiles = [
+      { name: 'ApexPhantom', avatarUrl: 'https://i.pravatar.cc/150?img=11' },
+      { name: 'GamerValkyrie', avatarUrl: 'https://i.pravatar.cc/150?img=12' }
+    ];
+    while (mappedPlayers.length < size) {
+      mappedPlayers.push({
+        id: 'bot_' + Math.random().toString(36).substring(7),
+        userId: 'bot_' + Math.random().toString(36).substring(7),
+        isBot: true,
+        name: botProfiles[mappedPlayers.length % botProfiles.length].name,
+        avatarUrl: botProfiles[mappedPlayers.length % botProfiles.length].avatarUrl,
+        level: 1,
+        color: colors[mappedPlayers.length]
+      });
     }
 
-    const originalOnDisconnect = socket.ondisconnect;
-    const originalOnError = socket.onerror;
+    const myMatchPlayer = mappedPlayers.find(p => p.id === myPlayerId || p.userId === myUserId);
+    const initialColour = myMatchPlayer ? myMatchPlayer.color : 'blue';
+    setMyPlayerColour(initialColour);
+    myPlayerColourRef.current = initialColour;
+    setRoomId(matchId!);
 
-    socket.ondisconnect = (evt) => {
-      console.warn('[ONLINE] Nakama socket disconnected:', evt);
-      toast.error('Game server connection lost.');
-      navigate('/setup');
-      if (originalOnDisconnect) originalOnDisconnect(evt);
+    const joinMessage = {
+      matchId,
+      playerId: myPlayerId,
+      name: currentUser?.userName || 'Player',
+      avatarUrl: currentUser?.avatar_url || '',
+      colour: initialColour,
+      allPlayers: mappedPlayers
     };
 
-    socket.onerror = (err) => {
-      console.error('[ONLINE] Nakama socket error:', err);
-      toast.error('Game server connection error.');
-      navigate('/setup');
-      if (originalOnError) originalOnError(err);
+    const sendJoinMessage = () => {
+      try {
+        console.log('[ONLINE] Sending join_match to game server...', joinMessage);
+        sendGameMessage('join_match', joinMessage);
+      } catch (err) {
+        console.error('[ONLINE] Failed to send join_match message:', err);
+      }
     };
 
-    const getEffectivePlayerId = () => localSessionId || myPlayerId || '';
-    const originalSendMatchState = socket.sendMatchState.bind(socket);
+    if (ws.readyState === WebSocket.OPEN) {
+      sendJoinMessage();
+    } else {
+      ws.addEventListener('open', sendJoinMessage);
+    }
+
+    let latestProcessedSeq = 0;
+    let pendingStateSync: any = null;
 
     // ─── Game Initialization ───────────────────────────────────────────────────
     const initializeGame = (playersList: any[]) => {
@@ -270,14 +314,6 @@ function Game({
       console.log('[ONLINE] Initializing game locally with player list:', playersList);
 
       const mappedSequence = playersList.map((p: any) => p.colour || p.color);
-      const effectivePlayerId = getEffectivePlayerId();
-      const myMatchPlayer = playersList.find((p: any) => p.id === effectivePlayerId) || playersList.find((p: any) => p.userId === myUserId);
-      if (myMatchPlayer) {
-        const col = myMatchPlayer.colour || myMatchPlayer.color;
-        setMyPlayerColour(col);
-        myPlayerColourRef.current = col;
-      }
-
       dispatch(setPlayerSequenceDirect(mappedSequence));
       dispatch(setGameStartTime(Date.now()));
 
@@ -309,7 +345,7 @@ function Game({
       dispatch(setCurrentPlayerColour(nextColour));
     };
 
-    // ─── ALL CLIENTS: Apply dice result (OpCode 201) ─────────────────────────────
+    // ─── ALL CLIENTS: Apply dice result ──────────────────────────────────────────
     const allClientsApplyDiceResult = (data: { colour: TPlayerColour; roll: number; hasMovableTokens?: boolean }, onComplete?: () => void) => {
       const colour = data.colour;
       const roll = data.roll;
@@ -326,50 +362,12 @@ function Game({
         remainingDelay = 300;
       }
 
-      // Prefetch auto-move decision and send to server early to overlap with dice roll animation
-      let autoMoveTokenId: number | null = null;
-      let isAutoMoveLocked = false;
-      if (data.hasMovableTokens && colour === myPlayerColourRef.current) {
-        const freshState = store.getState();
-        const players = freshState.players.players;
-        const player = players.find((p) => p.colour === colour);
-        if (player) {
-          const areUnlockableTokensPresent =
-            roll === 6 && player.tokens.some((t) => areCoordsEqual(t.coordinates, t.initialCoords));
-          const allTokens = players.flatMap((p) => p.tokens);
-          const movableTokens = player.tokens.filter((t) => isTokenMovable(t, roll, allTokens));
-          const areAllTokensInSameCoord =
-            movableTokens.length === 0
-              ? false
-              : movableTokens.every((t) => areCoordsEqual(movableTokens[0].coordinates, t.coordinates));
-
-          if (areAllTokensInSameCoord && !areUnlockableTokensPresent) {
-            const targetToken = movableTokens[0];
-            autoMoveTokenId = targetToken.id;
-            isAutoMoveLocked = targetToken.isLocked;
-
-            // Register optimistically early
-            const moveKey = `${colour}_${targetToken.id}`;
-            optimisticTokenMovesRef.current.add(moveKey);
-
-            try {
-              console.log('[AUTO-MOVE-PREFETCH] Sending auto-move early to parallelize network delay:', colour, targetToken.id);
-              const socket = getNakamaSocket();
-              socket.sendMatchState(roomIdRef.current, 101, JSON.stringify({ id: targetToken.id }));
-            } catch (err) {
-              console.error('[CLIENT] Failed to send early auto-move input:', err);
-            }
-          }
-        }
-      }
-
       const applyResult = () => {
         dispatch(setIsPlaceholderShowing({ colour, isPlaceholderShowing: false }));
         dispatch(setIsVisualRolling({ colour, isVisualRolling: false }));
 
         if (roll === 6) {
           dispatch(incrementNumberOfConsecutiveSix(colour));
-          // Reset consecutive sixes if it reaches 3 to match server logic
           const freshState = store.getState();
           const playerObj = freshState.players.players.find(p => p.colour === colour);
           if (playerObj && playerObj.numberOfConsecutiveSix >= 3) {
@@ -377,29 +375,6 @@ function Game({
           }
         } else {
           dispatch(resetNumberOfConsecutiveSix(colour));
-        }
-
-        // Auto-move visual execution
-        if (autoMoveTokenId !== null) {
-          const freshState = store.getState();
-          const player = freshState.players.players.find((p) => p.colour === colour);
-          const targetToken = player?.tokens.find((t) => t.id === autoMoveTokenId);
-          if (targetToken) {
-            console.log('[AUTO-MOVE-EXECUTE] Playing visual animation for prefetched auto-move:', colour, targetToken.id);
-            dispatch(deactivateAllTokens(colour));
-            if (isAutoMoveLocked) {
-              dispatch(setIsAnyTokenMoving(true));
-              setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, targetToken);
-              dispatch(unlockAndAlignTokens({ colour, id: targetToken.id }));
-              setTimeout(() => {
-                dispatch(setIsAnyTokenMoving(false));
-              }, FORWARD_TOKEN_TRANSITION_TIME);
-            } else {
-              moveAndCapture(targetToken, roll);
-            }
-          }
-          onComplete?.();
-          return;
         }
 
         // Activate tokens locally ONLY for the active local player so they can click.
@@ -417,7 +392,7 @@ function Game({
       }
     };
 
-    // ─── ALL CLIENTS: Apply token move result (OpCode 202) ──────────────────────
+    // ─── ALL CLIENTS: Apply token move result ────────────────────────────────────
     const allClientsApplyTokenMove = async (data: {
       colour: TPlayerColour;
       id: number;
@@ -438,28 +413,20 @@ function Game({
 
       console.log('[ALL] Applying token move result:', colour, data.id);
 
-      const moveKey = `${colour}_${data.id}`;
-      const isOptimistic = optimisticTokenMovesRef.current.has(moveKey);
-
-      if (isOptimistic) {
-        optimisticTokenMovesRef.current.delete(moveKey);
-        console.log('[OPTIMISTIC] Skipping visual animation of own token move — already animated.');
+      if (data.isUnlock) {
+        dispatch(setIsAnyTokenMoving(true));
+        setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
+        dispatch(unlockAndAlignTokens({ colour, id: data.id }));
+        dispatch(deactivateAllTokens(colour));
+        await new Promise<void>((resolve) => {
+          setTimeout(() => {
+            dispatch(setIsAnyTokenMoving(false));
+            resolve();
+          }, FORWARD_TOKEN_TRANSITION_TIME);
+        });
       } else {
-        if (data.isUnlock) {
-          dispatch(setIsAnyTokenMoving(true));
-          setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
-          dispatch(unlockAndAlignTokens({ colour, id: data.id }));
-          dispatch(deactivateAllTokens(colour));
-          await new Promise<void>((resolve) => {
-            setTimeout(() => {
-              dispatch(setIsAnyTokenMoving(false));
-              resolve();
-            }, FORWARD_TOKEN_TRANSITION_TIME);
-          });
-        } else {
-          const stepCount = data.path.length;
-          await moveAndCapture(token, stepCount);
-        }
+        // Pass exact server-provided path coordinates
+        await moveAndCapture(token, data.path.length, data.path);
       }
 
       // Authoritative reconciliation for captures
@@ -477,189 +444,103 @@ function Game({
       }
     };
 
-    let requestInterval: any;
-    let stateSyncRetryInterval: any;
+    const applyStateSync = (parsedState: any) => {
+      if (playersRegisteredInitiallyRef.current) {
+        initializeGame(parsedState.players);
+      } else {
+        parsedState.players.forEach((p: any) => {
+          if (p.isBot) {
+            dispatch(convertPlayerToBot({ colour: p.colour }));
+          }
+          if (p.hasQuit) {
+            const localPlayer = store.getState().players.players.find(lp => lp.colour === p.colour);
+            if (localPlayer && !localPlayer.hasQuit) {
+              dispatch(quitMatch(p.colour));
+            }
+          }
+          p.tokens.forEach((t: any) => {
+            dispatch(changeCoordsOfToken({ colour: p.colour, id: t.id, newCoords: t.coordinates }));
+            if (t.isLocked) {
+              try { dispatch(lockToken({ colour: p.colour, id: t.id })); } catch(e) {}
+            } else {
+              try { dispatch(unlockToken({ colour: p.colour, id: t.id })); } catch(e) {}
+            }
+            if (t.hasTokenReachedHome) {
+              try { dispatch(markTokenAsReachedHome({ colour: p.colour, id: t.id })); } catch(e) {}
+            }
+          });
+        });
+        dispatch(setPlayerSequenceDirect(parsedState.playerSequence));
+        dispatch(setCurrentPlayerColour(parsedState.currentTurnColour));
+      }
 
-    const handleSingleSocketMessage = async (opCode: number, parsed: any, _result: MatchData) => {
-      console.log(`[SOCKET QUEUE] Processing OpCode ${opCode}`, parsed);
+      setTurnDeadlineMs(parsedState.turnDeadlineMs);
 
-      // Handle rematch events after game has ended
-      if (isGameEnded && opCode >= 101 && opCode <= 103) {
-        document.dispatchEvent(new CustomEvent('nakama-rematch-event', { detail: { opCode, parsed } }));
+      if (parsedState.diceNumber !== -1) {
+        dispatch(setDiceNumberDirect({ colour: parsedState.currentTurnColour, diceNumber: parsedState.diceNumber }));
+      }
+    };
+
+    const handleIncomingMessage = async (msg: any) => {
+      const { type, sequenceNumber } = msg;
+
+      if (sequenceNumber && sequenceNumber <= latestProcessedSeq) {
+        console.warn('[ONLINE] Ignoring stale message with seq:', sequenceNumber, 'current latest:', latestProcessedSeq);
         return;
       }
+      if (sequenceNumber) {
+        latestProcessedSeq = sequenceNumber;
+      }
 
-      if (opCode === 200) {
-        // STATE_SYNC
-        if (playersRegisteredInitiallyRef.current) {
-          initializeGame(parsed.players);
+      console.log(`[ONLINE] Processing event "${type}" seq ${sequenceNumber}`, msg);
+
+      if (type === 'state_sync') {
+        const isAnimationInProgress = store.getState().players.isAnyTokenMoving || 
+                                      store.getState().dice.dice.some(d => d.isVisualRolling);
+        if (isAnimationInProgress) {
+          console.log('[ONLINE] Animation in progress. Buffering state_sync:', sequenceNumber);
+          pendingStateSync = msg;
         } else {
-          parsed.players.forEach((p: any) => {
-            if (p.isBot) {
-              dispatch(convertPlayerToBot({ colour: p.colour }));
-            }
-            if (p.hasQuit) {
-              const localPlayer = store.getState().players.players.find(lp => lp.colour === p.colour);
-              if (localPlayer && !localPlayer.hasQuit) {
-                dispatch(quitMatch(p.colour));
-              }
-            }
-            p.tokens.forEach((t: any) => {
-              dispatch(changeCoordsOfToken({ colour: p.colour, id: t.id, newCoords: t.coordinates }));
-              if (t.isLocked) {
-                try { dispatch(lockToken({ colour: p.colour, id: t.id })); } catch(e) {}
-              } else {
-                try { dispatch(unlockToken({ colour: p.colour, id: t.id })); } catch(e) {}
-              }
-              if (t.hasTokenReachedHome) {
-                try { dispatch(markTokenAsReachedHome({ colour: p.colour, id: t.id })); } catch(e) {}
-              }
-            });
-          });
-          dispatch(setPlayerSequenceDirect(parsed.playerSequence));
-          dispatch(setCurrentPlayerColour(parsed.currentTurnColour));
+          applyStateSync(msg);
         }
-
-        setTurnDeadlineMs(parsed.turnDeadlineMs);
-
-        if (parsed.diceNumber !== -1) {
-          dispatch(setDiceNumberDirect({ colour: parsed.currentTurnColour, diceNumber: parsed.diceNumber }));
-        }
-
-      } else if (opCode === 201) {
-        // DICE_ROLLED
+      } else if (type === 'dice_result') {
         await new Promise<void>((resolve) => {
-          allClientsApplyDiceResult(parsed, resolve);
+          allClientsApplyDiceResult(msg, resolve);
         });
 
-      } else if (opCode === 202) {
-        // TOKEN_MOVED
-        await allClientsApplyTokenMove(parsed);
-
-      } else if (opCode === 203) {
-        // TURN_CHANGE
-        setTurnDeadlineMs(parsed.deadlineMs);
-        applyTurnTransition(parsed.nextTurnColour);
-
-      } else if (opCode === 204) {
-        // MATCH_END
-        toast.success(`Match ended! Winner: ${parsed.winnerColour}`);
-        dispatch(declareForfeit({ losingColour: parsed.winnerColour === 'blue' ? 'green' : 'blue' }));
-
-      } else if (opCode === 205) {
-        // ACTION_REJECTED
-        console.warn("[CLIENT] Action rejected by server:", parsed.reason);
-        toast.error(`Invalid action: ${parsed.reason}`);
-      }
-    };
-
-    const processMessageQueue = async () => {
-      if (isProcessingQueueRef.current || messageQueueRef.current.length === 0) return;
-      isProcessingQueueRef.current = true;
-
-      while (messageQueueRef.current.length > 0) {
-        const nextMsg = messageQueueRef.current.shift();
-        if (!nextMsg) continue;
-        try {
-          await handleSingleSocketMessage(nextMsg.opCode, nextMsg.parsed, nextMsg.result);
-        } catch (err) {
-          console.error('[QUEUE] Error processing socket message:', err);
+        // Apply buffered state sync if animation finished and not moving tokens
+        if (pendingStateSync && !store.getState().players.isAnyTokenMoving) {
+          console.log('[ONLINE] Dice animation finished. Applying buffered state_sync:', pendingStateSync.sequenceNumber);
+          applyStateSync(pendingStateSync);
+          pendingStateSync = null;
         }
-      }
+      } else if (type === 'token_moved') {
+        await allClientsApplyTokenMove(msg);
 
-      isProcessingQueueRef.current = false;
-    };
-
-    socket.onmatchdata = (result: MatchData) => {
-      const data = new TextDecoder().decode(result.data);
-      let parsed: any;
-      try { parsed = JSON.parse(data); } catch(e) { return; }
-
-      const opCode = result.op_code;
-      console.log(`[SOCKET] Enqueueing OpCode ${opCode}`, parsed);
-
-      messageQueueRef.current.push({ opCode, parsed, result });
-      processMessageQueue();
-    };
-
-    const joinMatchAsync = async () => {
-      if (matchJoinedRef.current) return;
-      matchJoinedRef.current = true;
-      try {
-        const liveSocket = await ensureSocketConnected();
-        console.log('[ONLINE] Joining match. matchId:', matchId, 'token:', matchedToken ? 'present' : 'missing');
-        let match;
-
-        if (matchId) {
-          try {
-            match = await liveSocket.joinMatch(matchId);
-          } catch (err: any) {
-            console.warn('[ONLINE] Failed to join via matchId, falling back to token...', err);
-            if (matchedToken) match = await liveSocket.joinMatch(undefined, matchedToken);
-            else throw err;
-          }
-        } else if (matchedToken) {
-          match = await liveSocket.joinMatch(undefined, matchedToken);
-        } else {
-          throw new Error('No match ID or matchmaking token provided.');
+        // Apply buffered state sync if animation finished
+        if (pendingStateSync) {
+          console.log('[ONLINE] Token animation finished. Applying buffered state_sync:', pendingStateSync.sequenceNumber);
+          applyStateSync(pendingStateSync);
+          pendingStateSync = null;
         }
-
-        const joinedMatchId = match.match_id;
-        console.log('[ONLINE] Joined match successfully. match_id:', joinedMatchId);
-        setRoomId(joinedMatchId);
-
-        const mySessionId = match.self?.session_id || '';
-        if (mySessionId) setLocalSessionId(mySessionId);
-
-        // Explicitly request STATE_SYNC from server (OpCode 199).
-        // This is the authoritative trigger: even if matchJoin's push was lost in transit,
-        // the server will respond to our request with a fresh STATE_SYNC.
-        const sendStateSyncRequest = () => {
-          try {
-            console.log('[ONLINE] Sending REQUEST_STATE_SYNC (OpCode 199)...');
-            getNakamaSocket().sendMatchState(joinedMatchId, 199, '{}');
-          } catch (e) {
-            console.warn('[ONLINE] Failed to send state sync request:', e);
-          }
-        };
-
-        // Send immediately, then retry every 2s until STATE_SYNC received
-        sendStateSyncRequest();
-        stateSyncRetryInterval = setInterval(() => {
-          if (matchJoinedRef.current && !playersRegisteredInitiallyRef.current) {
-            // STATE_SYNC received → stop retrying
-            clearInterval(stateSyncRetryInterval);
-            return;
-          }
-          console.log('[ONLINE] Retrying REQUEST_STATE_SYNC (OpCode 199)...');
-          sendStateSyncRequest();
-        }, 2000);
-
-        // Periodically ping host to maintain connection
-        requestInterval = setInterval(() => {
-          try {
-            getNakamaSocket().sendMatchState(joinedMatchId, 102, '{}');
-          } catch (e) {}
-        }, 4000);
-      } catch (e: any) {
-        matchJoinedRef.current = false;
-        if (requestInterval) clearInterval(requestInterval);
-        if (stateSyncRetryInterval) clearInterval(stateSyncRetryInterval);
-        console.error('[ONLINE] Error joining match:', e);
-        toast.error('Error joining match: ' + e.message);
-        navigate('/setup');
+      } else if (type === 'turn_changed') {
+        setTurnDeadlineMs(msg.deadlineMs);
+        applyTurnTransition(msg.nextTurnColour);
+      } else if (type === 'match_end') {
+        toast.success(`Match ended! Winner: ${msg.winnerColour}`);
+        dispatch(declareForfeit({ losingColour: msg.winnerColour === 'blue' ? 'green' : 'blue' }));
+      } else if (type === 'action_rejected') {
+        console.warn("[ONLINE] Action rejected by server:", msg.reason);
+        toast.error(`Invalid action: ${msg.reason}`);
       }
     };
 
-    joinMatchAsync();
+    const unsubscribe = addGameMessageListener(handleIncomingMessage);
 
     return () => {
-      socket.onmatchdata = () => {};
-      socket.ondisconnect = originalOnDisconnect;
-      socket.onerror = originalOnError;
-      socket.sendMatchState = originalSendMatchState; // Restore original sendMatchState
-      if (requestInterval) clearInterval(requestInterval);
-      if (stateSyncRetryInterval) clearInterval(stateSyncRetryInterval);
+      unsubscribe();
+      ws.removeEventListener('open', sendJoinMessage);
+      disconnectGameServer();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnline, matchedToken, matchId, myPlayerId, myUserId]);
@@ -678,7 +559,7 @@ function Game({
 
     if (isOnline && roomId) {
       try {
-        getNakamaSocket().sendMatchState(roomId, 7, JSON.stringify({ colour: colourToQuit }));
+        sendGameMessage('quit_game', { matchId: roomId, playerId: myPlayerId });
       } catch (e) {}
     }
 
@@ -693,12 +574,11 @@ function Game({
     }
   };
 
-  // Determine if the local player is the host (lowest session_id alphabetically)
   const amHostValue = useMemo(() => {
     if (!matchedUsers || matchedUsers.length === 0) return false;
     const allSessionIds = matchedUsers.map(u => u.presence.session_id).sort();
-    return allSessionIds[0] === (localSessionId || myPlayerId || '');
-  }, [matchedUsers, localSessionId, myPlayerId]);
+    return allSessionIds[0] === (myPlayerId || '');
+  }, [matchedUsers, myPlayerId]);
 
   const onlineContextValue = useMemo(() => {
     if (!isOnline) return null;
@@ -707,7 +587,6 @@ function Game({
       roomId,
       myPlayerColour,
       amHost: amHostValue,
-      optimisticTokenMovesRef,
       onTokenMove,
       diceRollStartTimestampRef,
       turnDeadlineMs,
