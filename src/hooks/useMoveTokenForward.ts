@@ -46,6 +46,7 @@ export function cancelActiveTokenAnimation() {
 export const useMoveTokenForward = () => {
   const dispatch = useDispatch<AppDispatch>();
   const store = useStore<RootState>();
+  const onlineContext = useContext(OnlineGameContext);
 
   return useCallback(
     (diceNumber: number, token: TToken, customPath?: TCoordinate[]): Promise<TMoveTokenCompletionData> => {
@@ -93,7 +94,6 @@ export const useMoveTokenForward = () => {
         let i = initialCoordinateIndex;
         let count = 0;
 
-        const onlineContext = useContext(OnlineGameContext);
         const isOnline = !!onlineContext?.isOnline;
 
         const moveStep = () => {

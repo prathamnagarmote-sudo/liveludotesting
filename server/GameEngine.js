@@ -1034,6 +1034,7 @@ export class GameEngine {
 
     if (hasTokenReachedHome) {
       token.hasTokenReachedHome = true;
+      token.isLocked = true;
       token.coordinates = getHomeCoordForColour(colour);
     }
 

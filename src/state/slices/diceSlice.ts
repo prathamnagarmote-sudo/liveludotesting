@@ -40,25 +40,34 @@ const reducers = {
     state: TDiceState,
     action: PayloadAction<{ colour: TPlayerColour; isPlaceholderShowing: boolean }>
   ) => {
-    const dice = getDice(state, action.payload.colour);
-    dice.isPlaceholderShowing = action.payload.isPlaceholderShowing;
+    const dice = state.dice.find((d) => d.colour === action.payload.colour);
+    if (dice) {
+      dice.isPlaceholderShowing = action.payload.isPlaceholderShowing;
+    }
   },
   setIsVisualRolling: (
     state: TDiceState,
     action: PayloadAction<{ colour: TPlayerColour; isVisualRolling: boolean }>
   ) => {
-    const dice = getDice(state, action.payload.colour);
-    dice.isVisualRolling = action.payload.isVisualRolling;
+    const dice = state.dice.find((d) => d.colour === action.payload.colour);
+    if (dice) {
+      dice.isVisualRolling = action.payload.isVisualRolling;
+    }
   },
   setDiceNumber: (
     state: TDiceState,
     action: PayloadAction<{ colour: TPlayerColour; randomIndex: number }>
   ) => {
-    const dice = getDice(state, action.payload.colour);
-    dice.diceNumber = state.rollBag[action.payload.colour][action.payload.randomIndex];
-    state.rollBag[action.payload.colour] = state.rollBag[action.payload.colour].filter(
-      (_, i) => i !== action.payload.randomIndex
-    );
+    const dice = state.dice.find((d) => d.colour === action.payload.colour);
+    if (dice) {
+      const bag = state.rollBag[action.payload.colour];
+      if (bag && bag[action.payload.randomIndex] !== undefined) {
+        dice.diceNumber = bag[action.payload.randomIndex];
+        state.rollBag[action.payload.colour] = bag.filter(
+          (_, i) => i !== action.payload.randomIndex
+        );
+      }
+    }
   },
   renewRollBag: (state: TDiceState, action: PayloadAction<TPlayerColour>) => {
     state.rollBag[action.payload] = generateRollBag();
@@ -67,8 +76,10 @@ const reducers = {
     state: TDiceState,
     action: PayloadAction<{ colour: TPlayerColour; diceNumber: number }>
   ) => {
-    const dice = getDice(state, action.payload.colour);
-    dice.diceNumber = action.payload.diceNumber;
+    const dice = state.dice.find((d) => d.colour === action.payload.colour);
+    if (dice) {
+      dice.diceNumber = action.payload.diceNumber;
+    }
   },
   clearDiceState: () => initialState,
 };

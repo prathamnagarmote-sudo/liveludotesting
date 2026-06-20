@@ -317,6 +317,21 @@ const reducers = {
     player.hasQuit = true;
     state.isGameEnded = true;
   },
+  syncTokenStateDirect: (
+    state: TPlayerState,
+    action: PayloadAction<{
+      colour: TPlayerColour;
+      id: number;
+      coordinates: TCoordinate;
+      isLocked: boolean;
+      hasTokenReachedHome: boolean;
+    }>
+  ) => {
+    const token = getToken(state, action.payload.colour, action.payload.id);
+    token.coordinates = action.payload.coordinates;
+    token.isLocked = action.payload.isLocked;
+    token.hasTokenReachedHome = action.payload.hasTokenReachedHome;
+  },
   clearPlayersState: () => initialState,
 };
 
@@ -353,6 +368,7 @@ export const {
   clearPlayersState,
   changeVisualCoordsOfToken,
   syncVisualCoordinates,
+  syncTokenStateDirect,
 } = playersSlice.actions;
 
 export default playersSlice.reducer;

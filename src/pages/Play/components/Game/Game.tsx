@@ -18,6 +18,7 @@ import {
   convertPlayerToBot,
   quitMatch,
   syncVisualCoordinates,
+  syncTokenStateDirect,
 } from '../../../../state/slices/playersSlice';
 import { type TPlayerColour } from '../../../../types';
 import Board from '../Board/Board';
@@ -156,6 +157,7 @@ function Game({
   };
 
   // No colorMap needed — all colors transmitted as canonical strings
+  const [reconnectTrigger, setReconnectTrigger] = useState(0);
 
   useEffect(() => {
     if (initData.length === 0) return;
@@ -248,6 +250,9 @@ function Game({
 
       if (Date.now() - lastPongReceivedTimeRef.current > 9000) {
         setIsConnectionLagging(true);
+        console.warn('[ONLINE] Ping timeout. Triggering socket reconnect...');
+        lastPongReceivedTimeRef.current = Date.now(); // prevent multiple triggers
+        setReconnectTrigger((prev) => prev + 1);
       }
     }, 3000);
 
@@ -475,7 +480,8 @@ function Game({
           } catch (e) {}
         }
       } else if (type === 'turn_changed') {
-        setTurnDeadlineMs(msg.deadlineMs);
+        const remaining = msg.timestamp ? Math.max(0, msg.deadlineMs - msg.timestamp) : Math.max(0, msg.deadlineMs - Date.now());
+        setTurnDeadlineMs(Date.now() + remaining);
         applyTurnTransition(msg.nextTurnColour);
       } else if (type === 'match_end') {
         toast.success(`Match ended! Winner: ${msg.winnerColour}`);
@@ -599,23 +605,27 @@ function Game({
               dispatch(quitMatch(p.colour));
             }
           }
+          // Register dice dynamically if not present
+          const existingDice = store.getState().dice.dice.find(d => d.colour === p.colour);
+          if (!existingDice) {
+            dispatch(registerDice(p.colour));
+          }
           p.tokens.forEach((t: any) => {
-            dispatch(changeCoordsOfToken({ colour: p.colour, id: t.id, newCoords: t.coordinates }));
-            if (t.isLocked) {
-              try { dispatch(lockToken({ colour: p.colour, id: t.id })); } catch(e) {}
-            } else {
-              try { dispatch(unlockToken({ colour: p.colour, id: t.id })); } catch(e) {}
-            }
-            if (t.hasTokenReachedHome) {
-              try { dispatch(markTokenAsReachedHome({ colour: p.colour, id: t.id })); } catch(e) {}
-            }
+            dispatch(syncTokenStateDirect({
+              colour: p.colour,
+              id: t.id,
+              coordinates: t.coordinates,
+              isLocked: t.isLocked,
+              hasTokenReachedHome: t.hasTokenReachedHome,
+            }));
           });
         });
         dispatch(setPlayerSequenceDirect(parsedState.playerSequence));
         dispatch(setCurrentPlayerColour(parsedState.currentTurnColour));
       }
 
-      setTurnDeadlineMs(parsedState.turnDeadlineMs);
+      const remaining = parsedState.timestamp ? Math.max(0, parsedState.turnDeadlineMs - parsedState.timestamp) : Math.max(0, parsedState.turnDeadlineMs - Date.now());
+      setTurnDeadlineMs(Date.now() + remaining);
 
       if (parsedState.diceNumber !== -1) {
         dispatch(setDiceNumberDirect({ colour: parsedState.currentTurnColour, diceNumber: parsedState.diceNumber }));
@@ -688,7 +698,7 @@ function Game({
       disconnectGameServer();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOnline, matchedToken, matchId, myPlayerId, myUserId]);
+  }, [isOnline, matchedToken, matchId, myPlayerId, myUserId, reconnectTrigger]);
 
   const handleDiceRoll = (colour: TPlayerColour, diceNumber: number) => {
     if (!isOnline) {
