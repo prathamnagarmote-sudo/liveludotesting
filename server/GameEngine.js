@@ -938,11 +938,11 @@ export class GameEngine {
     });
 
     if (!hasMovableTokens) {
-      // Wait for rolling animation (1500ms) then pass turn
+      // Wait for rolling animation (500ms) then pass turn
       state.noMovableTokensTimer = setTimeout(() => {
         state.noMovableTokensTimer = null;
         this.nextTurn(matchId);
-      }, 1500);
+      }, 500);
     } else {
       // 15 seconds to move token
       state.turnDeadlineMs = Date.now() + 15000;
@@ -1074,7 +1074,7 @@ export class GameEngine {
       }
     }
 
-    const totalAnimationTime = forwardDuration + captureDuration + 400; // 400ms buffer
+    const totalAnimationTime = forwardDuration + captureDuration + 50; // 50ms buffer
 
     // Post-move delay
     setTimeout(() => {
@@ -1204,7 +1204,7 @@ export class GameEngine {
     const player = state.players.find(p => p.colour === currentColour);
 
     if (player && player.isBot) {
-      // 1000ms delay to make it feel human
+      // 300ms delay to make it feel human but snappy
       state.botRollTimer = setTimeout(() => {
         if (state.status !== 'playing' || state.playerSequence[state.currentTurnIndex] !== currentColour) return;
 
@@ -1221,9 +1221,9 @@ export class GameEngine {
             } else {
               this.nextTurn(matchId);
             }
-          }, 1000);
+          }, 300);
         }
-      }, 1000);
+      }, 300);
     }
   }
 

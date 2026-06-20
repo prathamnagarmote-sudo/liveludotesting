@@ -18,6 +18,11 @@ const wss = new WebSocketServer({ server: httpServer });
 const gameEngine = new GameEngine();
 
 wss.on('connection', (ws, req) => {
+  // Disable Nagle's algorithm for low latency (no message buffering)
+  if (req.socket && req.socket.setNoDelay) {
+    req.socket.setNoDelay(true);
+  }
+
   // Parse matchId from URL path (e.g. /match/some-match-uuid)
   const urlPath = req.url || '';
   const matchIdMatch = urlPath.match(/^\/match\/([^/]+)/);
