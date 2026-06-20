@@ -43,6 +43,7 @@ function Token({ colour, id, tokenClickData }: Props) {
   );
   const tokenClickDataRef = useRef(tokenClickData);
   const [isCurrentlyFocused, setIsCurrentlyFocused] = useState(false);
+  const [isPendingMove, setIsPendingMove] = useState(false);
   const tokenElRef = useRef<HTMLButtonElement | null>(null);
 
   const { coordinates, isActive, isLocked, tokenAlignmentData } = token;
@@ -51,6 +52,11 @@ function Token({ colour, id, tokenClickData }: Props) {
   useEffect(() => {
     prevCoordsRef.current = coordinates;
   }, [coordinates]);
+
+  // Reset pending state when token position changes or active status resets
+  useEffect(() => {
+    setIsPendingMove(false);
+  }, [coordinates.x, coordinates.y, isActive]);
 
   const hasMoved = coordinates.x !== prevCoordsRef.current.x || coordinates.y !== prevCoordsRef.current.y;
 
@@ -99,10 +105,12 @@ function Token({ colour, id, tokenClickData }: Props) {
       if (onlineContext?.isOnline) {
         if (isActive && diceNumber !== -1 && diceNumber) {
           if (colour === onlineContext.myPlayerColour) {
+            setIsPendingMove(true);
             dispatch(deactivateTokensOfAllPlayers());
             try {
               onlineContext.onTokenMove?.(colour, id, isLocked);
             } catch (err) {
+              setIsPendingMove(false);
               console.error("Failed to execute token move:", err);
               toast.error("Failed to sync token move with server.");
             }
@@ -120,10 +128,12 @@ function Token({ colour, id, tokenClickData }: Props) {
     if (onlineContext?.isOnline) {
       if (isActive && diceNumber !== -1 && diceNumber) {
         if (colour === onlineContext.myPlayerColour) {
+          setIsPendingMove(true);
           dispatch(deactivateTokensOfAllPlayers());
           try {
             onlineContext.onTokenMove?.(colour, id, isLocked);
           } catch (err) {
+            setIsPendingMove(false);
             console.error("Failed to execute token move:", err);
             toast.error("Failed to sync token move with server.");
           }
@@ -138,7 +148,7 @@ function Token({ colour, id, tokenClickData }: Props) {
   return (
     <button
       id={getTokenDOMId(colour, id)}
-      className={styles.token}
+      className={clsx(styles.token, { [styles.pendingMove]: isPendingMove })}
       tabIndex={isActive ? undefined : -1}
       onFocus={() => setIsCurrentlyFocused(true)}
       onBlur={() => setIsCurrentlyFocused(false)}
