@@ -4,6 +4,7 @@ import type { TToken } from '../../src/types';
 export const DUMMY_TOKEN: TToken = {
   colour: 'blue',
   coordinates: { x: 0, y: 0 },
+  visualCoordinates: { x: 0, y: 0 },
   hasTokenReachedHome: false,
   id: 0,
   initialCoords: { x: 0, y: 0 },

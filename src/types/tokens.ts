@@ -16,6 +16,7 @@ export type TToken = {
   id: number;
   colour: TPlayerColour;
   coordinates: TCoordinate;
+  visualCoordinates: TCoordinate;
   initialCoords: TCoordinate;
   tokenAlignmentData: TTokenAlignmentData;
   isLocked: boolean;

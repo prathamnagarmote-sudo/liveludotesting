@@ -40,6 +40,7 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
   const dispatch = useDispatch<AppDispatch>();
   const onlineContext = useContext(OnlineGameContext);
   const isAnyTokenMoving = useSelector((state: RootState) => state.players.isAnyTokenMoving);
+  const movingTokenColour = useSelector((state: RootState) => state.players.movingTokenColour);
   const isGameEnded = useSelector((state: RootState) => state.players.isGameEnded);
   const currentPlayer = useSelector((state: RootState) => state.players.currentPlayerColour);
   const playerObj = useSelector((state: RootState) =>
@@ -64,13 +65,13 @@ function Dice({ colour, onDiceClick, playerName, positionColour }: Props) {
     !isCurrentPlayer ||
     !isMyTurn ||
     anyTokenActive ||
-    isAnyTokenMoving ||
+    (isAnyTokenMoving && movingTokenColour === colour) ||
     isGameEnded ||
     isPlaceholderShowing ||
     isBot;
 
   const timerPathRef = useRef<SVGPathElement>(null);
-  const isDiceRollAllowed = !anyTokenActive && !isAnyTokenMoving && !isPlaceholderShowing;
+  const isDiceRollAllowed = !anyTokenActive && !(isAnyTokenMoving && movingTokenColour === colour) && !isPlaceholderShowing;
   const { phase, isCritical, shouldShowTimer } = useTurnTimer(colour, isDiceRollAllowed, timerPathRef);
 
   const forcedNumberRef = useRef<number | null>(null);

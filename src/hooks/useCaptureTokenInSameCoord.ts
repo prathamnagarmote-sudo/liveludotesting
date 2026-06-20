@@ -58,7 +58,7 @@ export function useCaptureTokenInSameCoord() {
           })
         );
         dispatch(deactivateAllTokens(capturingToken.colour));
-        dispatch(setIsAnyTokenMoving(true));
+        dispatch(setIsAnyTokenMoving({ isMoving: true, colour: capturingToken.colour }));
         let isFirstCapture = true;
         let tokensSuccessfullyCaptured = 0;
         let captureCancelled = false;

@@ -14,6 +14,11 @@ export function tokensWithCoord(coord: TCoordinate, players: TPlayer[]): TToken[
   return allTokens.filter((t) => areCoordsEqual(t.coordinates, coord));
 }
 
+export function tokensWithVisualCoord(coord: TCoordinate, players: TPlayer[]): TToken[] {
+  const allTokens = players.flatMap((p) => p.tokens);
+  return allTokens.filter((t) => areCoordsEqual(t.visualCoordinates, coord));
+}
+
 export function getAvailableSteps({ colour, coordinates }: TToken): number {
   return getDistanceInTokenPath(colour, coordinates, getHomeCoordForColour(colour));
 }

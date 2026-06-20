@@ -17,6 +17,7 @@ import {
   markTokenAsReachedHome,
   convertPlayerToBot,
   quitMatch,
+  syncVisualCoordinates,
 } from '../../../../state/slices/playersSlice';
 import { type TPlayerColour } from '../../../../types';
 import Board from '../Board/Board';
@@ -27,7 +28,7 @@ import { handlePostDiceRollThunk } from '../../../../state/thunks/handlePostDice
 import GameFinishedScreen from '../GameFinishedScreen/GameFinishedScreen';
 import { changeTurnThunk } from '../../../../state/thunks/changeTurnThunk';
 import { useMoveAndCaptureToken } from '../../../../hooks/useMoveAndCaptureToken';
-import type { TPlayerInitData, TCoordinate } from '../../../../types';
+import type { TPlayerInitData } from '../../../../types';
 import { useNavigate } from 'react-router-dom';
 import { quitMatchThunk } from '../../../../state/thunks/quitMatchThunk';
 import { playerCountToWord } from '../../../../game/players/logic';
@@ -39,9 +40,9 @@ import styles from './Game.module.css';
 import menuIcon from '../../../../assets/menu.svg';
 import { connectGameServer, disconnectGameServer, sendGameMessage, addGameMessageListener } from '../../../../services/socket';
 import { toast } from 'react-toastify';
-import { unlockAndAlignTokens } from '../../../../state/thunks/unlockAndAlignTokens';
+import { unlockAndAlignVisualTokens } from '../../../../state/thunks/unlockAndAlignVisualTokens';
 import { setTokenTransitionTime } from '../../../../utils/setTokenTransitionTime';
-import { FORWARD_TOKEN_TRANSITION_TIME } from '../../../../game/tokens/constants';
+import { FORWARD_TOKEN_TRANSITION_TIME, TOKEN_START_COORDINATES } from '../../../../game/tokens/constants';
 
 
 
@@ -308,6 +309,8 @@ function Game({
 
     let latestProcessedSeq = 0;
     let pendingStateSync: any = null;
+    let stateQueueChain = Promise.resolve();
+    let animationQueueChain = Promise.resolve();
 
     let previousIsAnyTokenMoving = store.getState().players.isAnyTokenMoving;
     let previousIsAnyDiceRolling = store.getState().dice.dice.some(d => d.isVisualRolling);
@@ -326,6 +329,7 @@ function Game({
       if (animationFinished && pendingStateSync) {
         console.log('[ONLINE] Store subscription: Animations finished. Applying buffered state_sync:', pendingStateSync.sequenceNumber);
         applyStateSync(pendingStateSync);
+        dispatch(syncVisualCoordinates());
         pendingStateSync = null;
       }
     });
@@ -358,6 +362,7 @@ function Game({
       }
       playersRegisteredInitiallyRef.current = false;
       dispatch(setCurrentPlayerColour(mappedSequence[0]));
+      dispatch(syncVisualCoordinates());
       setIsMatchJoined(true);
     };
 
@@ -379,27 +384,16 @@ function Game({
       dispatch(setCurrentPlayerColour(nextColour));
     };
 
-    // ─── ALL CLIENTS: Apply dice result ──────────────────────────────────────────
-    const allClientsApplyDiceResult = (data: { colour: TPlayerColour; roll: number; hasMovableTokens?: boolean }, onComplete?: () => void) => {
-      const colour = data.colour;
-      const roll = data.roll;
+    // ─── ALL CLIENTS: Apply dice result logically ──────────────────────────────
+    const applyLogicalState = (msg: any) => {
+      const { type, colour, roll, hasMovableTokens } = msg;
+      const tStart = Date.now();
+      console.log(`[ONLINE] [RECEIPT] -> [STATE_APPLY_START] type: "${type}" seq: ${msg.sequenceNumber} at t = ${tStart}`);
 
-      dispatch(setDiceNumberDirect({ colour, diceNumber: roll }));
-
-      let remainingDelay = 0;
-      if (colour === myPlayerColourRef.current) {
-        const elapsed = Date.now() - diceRollStartTimestampRef.current;
-        remainingDelay = Math.max(0, 300 - elapsed);
-      } else {
-        dispatch(setIsPlaceholderShowing({ colour, isPlaceholderShowing: true }));
-        dispatch(setIsVisualRolling({ colour, isVisualRolling: true }));
-        remainingDelay = 300;
-      }
-
-      const applyResult = () => {
-        dispatch(setIsPlaceholderShowing({ colour, isPlaceholderShowing: false }));
-        dispatch(setIsVisualRolling({ colour, isVisualRolling: false }));
-
+      if (type === 'state_sync') {
+        applyStateSync(msg);
+      } else if (type === 'dice_result') {
+        dispatch(setDiceNumberDirect({ colour, diceNumber: roll }));
         if (roll === 6) {
           dispatch(incrementNumberOfConsecutiveSix(colour));
           const freshState = store.getState();
@@ -411,78 +405,117 @@ function Game({
           dispatch(resetNumberOfConsecutiveSix(colour));
         }
 
-        // Activate tokens locally ONLY for the active local player so they can click.
-        if (data.hasMovableTokens && colour === myPlayerColourRef.current) {
+        if (hasMovableTokens && colour === myPlayerColourRef.current) {
           dispatch(activateTokens({ all: roll === 6, colour, diceNumber: roll }));
         }
-        
-        onComplete?.();
-      };
+      } else if (type === 'token_moved') {
+        const finalCoords = msg.path[msg.path.length - 1];
+        if (msg.isUnlock) {
+          dispatch(unlockToken({ colour, id: msg.id }));
+          dispatch(changeCoordsOfToken({ colour, id: msg.id, newCoords: TOKEN_START_COORDINATES[colour as TPlayerColour] }));
+        } else if (finalCoords) {
+          dispatch(changeCoordsOfToken({ colour, id: msg.id, newCoords: finalCoords }));
+        }
 
-      if (remainingDelay <= 0) {
-        applyResult();
-      } else {
-        setTimeout(applyResult, remainingDelay);
+        if (msg.isCaptured && msg.capturedTokenColour && typeof msg.capturedTokenId === 'number') {
+          try {
+            dispatch(lockToken({ colour: msg.capturedTokenColour as TPlayerColour, id: msg.capturedTokenId }));
+          } catch (e) {}
+        }
+
+        if (msg.hasTokenReachedHome) {
+          try {
+            dispatch(markTokenAsReachedHome({ colour, id: msg.id }));
+          } catch (e) {}
+        }
+      } else if (type === 'turn_changed') {
+        setTurnDeadlineMs(msg.deadlineMs);
+        applyTurnTransition(msg.nextTurnColour);
+      } else if (type === 'match_end') {
+        toast.success(`Match ended! Winner: ${msg.winnerColour}`);
+        stopAllDiceAnimations();
+        dispatch(declareForfeit({ losingColour: msg.winnerColour === 'blue' ? 'green' : 'blue' }));
+      } else if (type === 'action_rejected') {
+        console.warn("[ONLINE] Action rejected by server:", msg.reason);
+        toast.error(`Invalid action: ${msg.reason}`);
+        stopAllDiceAnimations();
       }
+
+      console.log(`[ONLINE] [STATE_APPLIED] type: "${type}" seq: ${msg.sequenceNumber} in ${Date.now() - tStart}ms`);
     };
 
-    // ─── ALL CLIENTS: Apply token move result ────────────────────────────────────
-    const allClientsApplyTokenMove = async (data: {
-      colour: TPlayerColour;
-      id: number;
-      isUnlock: boolean;
-      path: TCoordinate[];
-      hasTokenReachedHome: boolean;
-      isCaptured: boolean;
-      hasPlayerWon: boolean;
-      capturedTokenColour?: string;
-      capturedTokenId?: number;
-    }) => {
-      const colour = data.colour;
-      const state = store.getState();
-      const player = state.players.players.find(p => p.colour === colour);
-      if (!player) return;
-      const token = player.tokens.find(t => t.id === data.id);
-      if (!token) return;
+    // ─── ALL CLIENTS: Play visual animations in order ──────────────────────────
+    const playVisualAnimation = async (msg: any) => {
+      const { type, colour } = msg;
+      const tStart = Date.now();
+      console.log(`[ONLINE] [ANIM_STARTED] type: "${type}" seq: ${msg.sequenceNumber} at t = ${tStart}`);
 
-      console.log('[ALL] Applying token move result:', colour, data.id);
-
-      const moveKey = `${colour}-${data.id}`;
-      const isOptimistic = optimisticTokenMovesRef.current.has(moveKey);
-      if (isOptimistic) {
-        optimisticTokenMovesRef.current.delete(moveKey);
-        console.log('[ONLINE] Skipping animation for locally executed optimistic move:', moveKey);
-      } else {
-        if (data.isUnlock) {
-          dispatch(setIsAnyTokenMoving(true));
-          setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
-          dispatch(unlockAndAlignTokens({ colour, id: data.id }));
-          dispatch(deactivateAllTokens(colour));
-          await new Promise<void>((resolve) => {
-            setTimeout(() => {
-              dispatch(setIsAnyTokenMoving(false));
-              resolve();
-            }, FORWARD_TOKEN_TRANSITION_TIME);
-          });
+      if (type === 'state_sync') {
+        const isAnimationInProgress = store.getState().players.isAnyTokenMoving || 
+                                      store.getState().dice.dice.some(d => d.isVisualRolling);
+        if (isAnimationInProgress) {
+          console.log('[ONLINE] [VISUAL] Animation in progress. Buffering sync coordinates.');
+          pendingStateSync = msg;
         } else {
-          // Pass exact server-provided path coordinates
-          await moveAndCapture(token, data.path.length, data.path);
+          dispatch(syncVisualCoordinates());
+        }
+      } else if (type === 'dice_result') {
+        await new Promise<void>((resolve) => {
+          let remainingDelay = 0;
+          if (colour === myPlayerColourRef.current) {
+            const elapsed = Date.now() - diceRollStartTimestampRef.current;
+            remainingDelay = Math.max(0, 300 - elapsed);
+          } else {
+            dispatch(setIsPlaceholderShowing({ colour, isPlaceholderShowing: true }));
+            dispatch(setIsVisualRolling({ colour, isVisualRolling: true }));
+            remainingDelay = 300;
+          }
+
+          const completeVisualRoll = () => {
+            dispatch(setIsPlaceholderShowing({ colour, isPlaceholderShowing: false }));
+            dispatch(setIsVisualRolling({ colour, isVisualRolling: false }));
+            resolve();
+          };
+
+          if (remainingDelay <= 0) {
+            completeVisualRoll();
+          } else {
+            setTimeout(completeVisualRoll, remainingDelay);
+          }
+        });
+      } else if (type === 'token_moved') {
+        const player = store.getState().players.players.find(p => p.colour === colour);
+        if (player) {
+          const token = player.tokens.find(t => t.id === msg.id);
+          if (token) {
+            const moveKey = `${colour}-${msg.id}`;
+            const isOptimistic = optimisticTokenMovesRef.current.has(moveKey);
+            if (isOptimistic) {
+              optimisticTokenMovesRef.current.delete(moveKey);
+              console.log('[ONLINE] [VISUAL] Skipping visual animation for locally executed optimistic move:', moveKey);
+            } else {
+              if (msg.isUnlock) {
+                dispatch(setIsAnyTokenMoving({ isMoving: true, colour }));
+                setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
+                dispatch(unlockAndAlignVisualTokens({ colour, id: msg.id }));
+                dispatch(deactivateAllTokens(colour));
+                await new Promise<void>((resolve) => {
+                  setTimeout(() => {
+                    dispatch(setIsAnyTokenMoving(false));
+                    resolve();
+                  }, FORWARD_TOKEN_TRANSITION_TIME);
+                });
+              } else {
+                dispatch(setIsAnyTokenMoving({ isMoving: true, colour }));
+                await moveAndCapture(token, msg.path.length, msg.path);
+                dispatch(setIsAnyTokenMoving(false));
+              }
+            }
+          }
         }
       }
 
-      // Authoritative reconciliation for captures
-      if (data.isCaptured && data.capturedTokenColour && typeof data.capturedTokenId === 'number') {
-        try {
-          dispatch(lockToken({ colour: data.capturedTokenColour as TPlayerColour, id: data.capturedTokenId }));
-        } catch (e) {}
-      }
-
-      // Authoritative reconciliation for reaching home
-      if (data.hasTokenReachedHome) {
-        try {
-          dispatch(markTokenAsReachedHome({ colour, id: data.id }));
-        } catch (e) {}
-      }
+      console.log(`[ONLINE] [ANIM_FINISHED] type: "${type}" seq: ${msg.sequenceNumber} in ${Date.now() - tStart}ms`);
     };
 
     const applyStateSync = (parsedState: any) => {
@@ -523,7 +556,7 @@ function Game({
       }
     };
 
-    const handleIncomingMessage = async (msg: any) => {
+    const handleIncomingMessage = (msg: any) => {
       const { type, sequenceNumber } = msg;
 
       if (sequenceNumber && sequenceNumber <= latestProcessedSeq) {
@@ -534,53 +567,27 @@ function Game({
         latestProcessedSeq = sequenceNumber;
       }
 
-      console.log(`[ONLINE] Processing event "${type}" seq ${sequenceNumber}`, msg);
+      console.log(`[ONLINE] [RECEIPT] Received event "${type}" seq ${sequenceNumber} at t = ${Date.now()}`);
 
-      if (type === 'state_sync') {
-        const isAnimationInProgress = store.getState().players.isAnyTokenMoving || 
-                                      store.getState().dice.dice.some(d => d.isVisualRolling);
-        if (isAnimationInProgress) {
-          console.log('[ONLINE] Animation in progress. Buffering state_sync:', sequenceNumber);
-          pendingStateSync = msg;
-        } else {
-          applyStateSync(msg);
-        }
-      } else if (type === 'dice_result') {
-        await new Promise<void>((resolve) => {
-          allClientsApplyDiceResult(msg, resolve);
-        });
+      // 1. Process logically in the State Queue immediately
+      stateQueueChain = stateQueueChain.then(async () => {
+        applyLogicalState(msg);
+      });
 
+      // 2. Schedule the visual animation in the Animation Queue
+      animationQueueChain = animationQueueChain.then(async () => {
+        await playVisualAnimation(msg);
+
+        // Apply buffered state sync if all animations finished
         const isMoving = store.getState().players.isAnyTokenMoving || 
                          store.getState().dice.dice.some(d => d.isVisualRolling);
-        // Apply buffered state sync if animation finished and not moving tokens
         if (pendingStateSync && !isMoving) {
-          console.log('[ONLINE] Dice animation finished. Applying buffered state_sync:', pendingStateSync.sequenceNumber);
+          console.log('[ONLINE] [VISUAL] Visual animations idle. Applying buffered state_sync:', pendingStateSync.sequenceNumber);
           applyStateSync(pendingStateSync);
+          dispatch(syncVisualCoordinates());
           pendingStateSync = null;
         }
-      } else if (type === 'token_moved') {
-        await allClientsApplyTokenMove(msg);
-
-        const isMoving = store.getState().players.isAnyTokenMoving || 
-                         store.getState().dice.dice.some(d => d.isVisualRolling);
-        // Apply buffered state sync if animation finished and no animations running
-        if (pendingStateSync && !isMoving) {
-          console.log('[ONLINE] Token animation finished. Applying buffered state_sync:', pendingStateSync.sequenceNumber);
-          applyStateSync(pendingStateSync);
-          pendingStateSync = null;
-        }
-      } else if (type === 'turn_changed') {
-        setTurnDeadlineMs(msg.deadlineMs);
-        applyTurnTransition(msg.nextTurnColour);
-      } else if (type === 'match_end') {
-        toast.success(`Match ended! Winner: ${msg.winnerColour}`);
-        stopAllDiceAnimations();
-        dispatch(declareForfeit({ losingColour: msg.winnerColour === 'blue' ? 'green' : 'blue' }));
-      } else if (type === 'action_rejected') {
-        console.warn("[ONLINE] Action rejected by server:", msg.reason);
-        toast.error(`Invalid action: ${msg.reason}`);
-        stopAllDiceAnimations();
-      }
+      });
     };
 
     const unsubscribe = addGameMessageListener(handleIncomingMessage);

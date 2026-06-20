@@ -46,23 +46,23 @@ function Token({ colour, id, tokenClickData }: Props) {
   const [isPendingMove, setIsPendingMove] = useState(false);
   const tokenElRef = useRef<HTMLButtonElement | null>(null);
 
-  const { coordinates, isActive, isLocked, tokenAlignmentData } = token;
+  const { visualCoordinates, isActive, isLocked, tokenAlignmentData } = token;
 
-  const prevCoordsRef = useRef(coordinates);
+  const prevVisualCoordsRef = useRef(visualCoordinates);
   useEffect(() => {
-    prevCoordsRef.current = coordinates;
-  }, [coordinates]);
+    prevVisualCoordsRef.current = visualCoordinates;
+  }, [visualCoordinates]);
 
   // Reset pending state when token position changes or active status resets
   useEffect(() => {
     setIsPendingMove(false);
-  }, [coordinates.x, coordinates.y, isActive]);
+  }, [visualCoordinates.x, visualCoordinates.y, isActive]);
 
-  const hasMoved = coordinates.x !== prevCoordsRef.current.x || coordinates.y !== prevCoordsRef.current.y;
+  const hasMoved = visualCoordinates.x !== prevVisualCoordsRef.current.x || visualCoordinates.y !== prevVisualCoordsRef.current.y;
 
   const { scaleFactor } = tokenAlignmentData;
   const getPosition = useCoordsToPosition();
-  const { x, y } = getPosition(coordinates, tokenAlignmentData);
+  const { x, y } = getPosition(visualCoordinates, tokenAlignmentData);
   const diceNumber = useSelector((state: RootState) =>
     state.dice.dice.find((d) => d.colour === colour)
   )?.diceNumber;
@@ -194,7 +194,7 @@ function Token({ colour, id, tokenClickData }: Props) {
       }
     >
       <span
-        key={`${coordinates.x}-${coordinates.y}`}
+        key={`${visualCoordinates.x}-${visualCoordinates.y}`}
         className={clsx(styles.bouncer, {
           [styles.active]: isActive && !isCurrentlyFocused,
           [styles.hopper]: hasMoved,

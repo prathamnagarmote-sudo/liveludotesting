@@ -10,12 +10,13 @@ import type { AppDispatch, RootState } from '../state/store';
 import { areCoordsEqual } from '../game/coords/logic';
 import { updateTokenPositionAndAlignmentThunk } from '../state/thunks/updateTokenPositionAndAlignmentThunk';
 import { setTokenTransitionTime } from '../utils/setTokenTransitionTime';
-import { useCallback } from 'react';
+import { useCallback, useContext } from 'react';
 import { FORWARD_TOKEN_TRANSITION_TIME } from '../game/tokens/constants';
 import { tokenPaths } from '../game/tokens/paths';
 import { getTokenDOMId } from '../game/tokens/logic';
 import type { TMoveTokenCompletionData } from '../types/tokens';
 import { playEngineSound } from '../utils/audio';
+import { OnlineGameContext } from '../pages/Play/components/Game/Game';
 
 // ─── Global Cancellation Mechanism ────────────────────────────────────────────
 // Each call to moveTokenForward generates a unique animation ID.
@@ -56,7 +57,7 @@ export const useMoveTokenForward = () => {
         const players = store.getState().players.players;
         dispatch(deactivateAllTokens(colour));
         setTokenTransitionTime(FORWARD_TOKEN_TRANSITION_TIME, token);
-        dispatch(setIsAnyTokenMoving(true));
+        dispatch(setIsAnyTokenMoving({ isMoving: true, colour }));
 
         // Assign a unique ID to this animation instance
         activeAnimationId++;
@@ -92,13 +93,16 @@ export const useMoveTokenForward = () => {
         let i = initialCoordinateIndex;
         let count = 0;
 
+        const onlineContext = useContext(OnlineGameContext);
+        const isOnline = !!onlineContext?.isOnline;
+
         const moveStep = () => {
           // If another animation started or this one was cancelled, abort immediately.
           if (isCancelled || myAnimationId !== activeAnimationId) return;
 
           i++;
           count++;
-          dispatch(updateTokenPositionAndAlignmentThunk({ colour, id, newCoords: tokenPath[i] }));
+          dispatch(updateTokenPositionAndAlignmentThunk({ colour, id, newCoords: tokenPath[i], isVisualOnly: isOnline }));
 
           const hasTokenReachedHome = areCoordsEqual(tokenPath[i], tokenPath[tokenPath.length - 1]);
 

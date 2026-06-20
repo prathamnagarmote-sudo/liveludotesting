@@ -18,6 +18,7 @@ type TPlayerState = {
   currentPlayerColour: TPlayerColour | null;
   playerSequence: TPlayerColour[];
   isAnyTokenMoving: boolean;
+  movingTokenColour: TPlayerColour | null;
   isGameEnded: boolean;
   isGameOver: boolean;
   playerFinishOrder: TPlayerNameAndColour[];
@@ -28,6 +29,7 @@ export const initialState: TPlayerState = {
   currentPlayerColour: null,
   playerSequence: [],
   isAnyTokenMoving: false,
+  movingTokenColour: null,
   isGameEnded: false,
   isGameOver: false,
   playerFinishOrder: [],
@@ -194,8 +196,31 @@ const reducers = {
     });
   },
 
-  setIsAnyTokenMoving: (state: TPlayerState, action: PayloadAction<boolean>) => {
-    state.isAnyTokenMoving = action.payload;
+  setIsAnyTokenMoving: (
+    state: TPlayerState,
+    action: PayloadAction<boolean | { isMoving: boolean; colour?: TPlayerColour }>
+  ) => {
+    if (typeof action.payload === 'boolean') {
+      state.isAnyTokenMoving = action.payload;
+      if (!action.payload) state.movingTokenColour = null;
+    } else {
+      state.isAnyTokenMoving = action.payload.isMoving;
+      state.movingTokenColour = action.payload.isMoving ? (action.payload.colour || null) : null;
+    }
+  },
+  changeVisualCoordsOfToken: (
+    state: TPlayerState,
+    action: PayloadAction<{ colour: TPlayerColour; id: number; newCoords: TCoordinate }>
+  ) => {
+    const token = getToken(state, action.payload.colour, action.payload.id);
+    token.visualCoordinates = action.payload.newCoords;
+  },
+  syncVisualCoordinates: (state: TPlayerState) => {
+    state.players.forEach((p) => {
+      p.tokens.forEach((t) => {
+        t.visualCoordinates = { ...t.coordinates };
+      });
+    });
   },
   markTokenAsReachedHome: (state: TPlayerState, action: PayloadAction<TTokenColourAndId>) => {
     if (state.isGameEnded) return;
@@ -326,6 +351,8 @@ export const {
   quitMatch,
   forceEndGameAsQuit,
   clearPlayersState,
+  changeVisualCoordsOfToken,
+  syncVisualCoordinates,
 } = playersSlice.actions;
 
 export default playersSlice.reducer;

@@ -15,6 +15,7 @@ export function genLockedTokens(colour: TPlayerColour): TToken[] {
       id: i,
       colour,
       coordinates: coordinateList[i],
+      visualCoordinates: coordinateList[i],
       isLocked: true,
       isActive: false,
       hasTokenReachedHome: false,
